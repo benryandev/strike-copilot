@@ -29,7 +29,7 @@ def keygen():
         sys.exit(f'A key already exists at {KEYFILE}. To make a new one, delete that file first (and remove the old key on Strike).')
     priv = Ed25519PrivateKey.generate()
     raw = priv.private_bytes(serialization.Encoding.Raw, serialization.PrivateFormat.Raw, serialization.NoEncryption()).hex()
-    KEYFILE.parent.mkdir(mode=0o700, exist_ok=True)
+    KEYFILE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     fd = os.open(KEYFILE, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)  # private from the moment it exists
     with os.fdopen(fd, 'w') as f: f.write(raw + '\n')
     print('PUBLIC KEY (safe to share; paste it on app.strikefinance.org/api-keys):')
