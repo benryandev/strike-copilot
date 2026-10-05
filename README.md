@@ -157,7 +157,7 @@ For each shortlisted trader you get a table like this (example numbers):
   30d      FM $55            +498       941     -262 (-26%)          574      11     22,498  -
   30d      FR $1,000          +66       983      -35 ( -3%)          118       2      3,315  -
            -> trade-off
-  VERDICT: TRADE-OFF -> neither is better on both profit and lowest point.
+  VERDICT: TRADE-OFF -> one made more, the other dropped less.
 ```
 
 - **FM / fixed margin**: every trade the lead opens is copied with the same dollar margin (here $55).
@@ -168,8 +168,9 @@ For each shortlisted trader you get a table like this (example numbers):
 - **skipped**: copies that wouldn't have happened (cap reached, below Strike's minimum order, not enough free margin).
 
 **Verdicts:**
-- **Fixed margin** or **fixed ratio**: that mode was better on *both* profit and lowest point, in both periods.
-- **About even**: within about 10% on both. Leans to fixed ratio (see [Disclosure](#2-disclosure)).
+- **Fixed margin** or **fixed ratio**: in both periods, that mode was at least as good on *both* profit and biggest
+  drop (within about 10%), and clearly better on one of them.
+- **About even**: within about 10% on both profit and biggest drop. Leans to fixed ratio (see [Disclosure](#2-disclosure)).
 - **Trade-off**: one made more, the other dropped less. You choose: more return, or a smoother ride.
 
 Every recommendation also lists the **settings**: margin per entry (or copy amount), how many entries the trader

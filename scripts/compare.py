@@ -4,8 +4,9 @@
 
 For each lead it replays the last 90 and the last 30 days on your balance, with your fee, leverage, exclusions and a
 total cap of balance x max_use (so neither mode can use more than you allowed), and prints a verdict:
-- A mode WINS only if it is better on BOTH net profit (after fees) and lowest point, in both windows.
-- ABOUT EVEN when net profit and max drop are each within 10% of each other (or within 2% of your balance): leans to
+- A mode WINS when, in both windows, it is at least as good on both net profit (after fees) and biggest drop and
+  clearly better on one of them. "As good" = within 10% of each other, or within 2% of your balance.
+- ABOUT EVEN when profit and biggest drop are both within that margin: leans to
   fixed ratio (disclosed: fixed ratio also trades more volume, which helps the repo author's referral tier).
 - Otherwise it's a TRADE-OFF: both are shown and you choose.
 Results are saved to data/compare/<lead>.json.
@@ -29,11 +30,13 @@ def close(a, b, acct):
 
 
 def verdict(fm, fr, acct):
+    """A mode wins when it is at least as good on both profit and biggest drop (within the tolerance) and clearly better on one."""
     if fm['wiped'] and not fr['wiped']: return 'fixed ratio'
     if fr['wiped'] and not fm['wiped']: return 'fixed margin'
-    if close(fm['net'], fr['net'], acct) and close(fm['dd'], fr['dd'], acct): return 'about even'
-    if fm['net'] > fr['net'] and fm['low'] >= fr['low']: return 'fixed margin'
-    if fr['net'] > fm['net'] and fr['low'] >= fm['low']: return 'fixed ratio'
+    net_eq, dd_eq = close(fm['net'], fr['net'], acct), close(fm['dd'], fr['dd'], acct)
+    if net_eq and dd_eq: return 'about even'
+    for a, b, name in ((fm, fr, 'fixed margin'), (fr, fm, 'fixed ratio')):
+        if (a['net'] > b['net'] or net_eq) and (a['dd'] > b['dd'] or dd_eq): return name  # dd is negative: higher = smaller drop
     return 'trade-off'
 
 
@@ -66,7 +69,7 @@ def analyse(lead, p, days=90, mk=None):
     sized = L.run(acct, L.fm(margin, lev), lev, fee=fee, excluded=ex)
     sym_cap = min(budget, math.ceil(max(sized['sym_pk'].values() or [margin]) / 50) * 50)
     out = {'lead': lead, 'account': acct, 'leverage': lev, 'budget': budget, 'fee': fee, 'excluded': ex,
-           'markets': L.symbols, 'unmarked': L.unmarked, 'peak_entries': entries, 'copiers': copiers(lead),
+           'markets': [m for m in L.symbols if m not in ex], 'unmarked': L.unmarked, 'peak_entries': entries, 'copiers': copiers(lead),
            'settings': {'fixed_margin': {'margin_per_entry': margin, 'max_concurrent_entries': entries},
                         'fixed_ratio': {'copy_amount': acct, 'ratio_now': acct / L.equity(L.now) if L.equity(L.now) else 0},
                         'caps': {'per_symbol': sym_cap, 'total': budget}},
@@ -97,7 +100,7 @@ def report(r):
     v = r['verdict']
     lines.append(f"  VERDICT: {v.upper()}" + {
         'about even': ' -> fixed ratio. (Disclosure: fixed ratio also trades more volume, which helps the repo author\'s referral tier. Fixed margin is just as good here.)',
-        'trade-off': ' -> neither is better on both profit and lowest point. Pick by what matters more to you.'}.get(v, ''))
+        'trade-off': ' -> one made more, the other dropped less. Pick by what matters more to you.'}.get(v, ''))
     lines.append(f"  Settings: fixed margin ${s['fixed_margin']['margin_per_entry']:,.0f} per entry (lead peaked at {s['fixed_margin']['max_concurrent_entries']} open entries)"
                  f" | fixed ratio copy amount ${s['fixed_ratio']['copy_amount']:,.0f} (ratio now {s['fixed_ratio']['ratio_now'] * 100:.2f}% of the lead)"
                  f" | caps ${s['caps']['per_symbol']:,.0f} per symbol, ${s['caps']['total']:,.0f} total | leverage {r['leverage']:.0f}x isolated, locked on: {', '.join(r['markets'])}")
