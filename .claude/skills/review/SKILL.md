@@ -6,8 +6,14 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
 # Review
 
 1. `python3 scripts/update_check.py`:
-   - Repo updates: summarise them in plain English (what changes for the user, not commit messages) and ask
-     "Want me to update?". Only on yes run `git pull -q` (no diffs or file listings: the user doesn't need them).
+   - Repo updates: summarise them in plain English (what changes for the user, not commit messages), then ask with
+     the AskUserQuestion tool (header "Update", single choice) so it can't be skipped:
+     "There are N updates to Strike Copilot. Install them before the review?" Options:
+       - "Update now (Recommended)": installs the updates, then runs the review with them.
+       - "Not this week": runs the review with the current version; I'll ask again next review.
+       - "Show me more detail first": lists each update with one line on why it matters, then asks again.
+     If an update fixes something that affects this user's account or a safety check, say so in the question.
+     Only after "Update now" run `git pull -q` (no diffs or file listings: the user doesn't need them).
      Then re-read CLAUDE.md and the skills, since the rules may have changed, and mention any new setup question
      their profile hasn't answered yet.
    - Spec changes: mention them only if a change touches endpoints the scripts use (copy, account, positions,
