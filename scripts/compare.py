@@ -23,7 +23,7 @@ TIE_REL, TIE_ABS = 0.10, 0.02
 def copiers(lead):
     n = 0
     for st in ('active',):
-        n += sum(1 for e in get(f'/v2/copy/leaderboard?status={st}&limit=500').get('entries', []) if e['lead_account_id'].lower() == lead.lower())
+        n += sum(1 for e in get(f'/v2/copy/leaderboard?status={st}&limit=500').get('entries') or [] if e['lead_account_id'].lower() == lead.lower())
     return n
 
 

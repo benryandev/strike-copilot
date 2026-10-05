@@ -90,7 +90,7 @@ def hl_map(mk=None):
 def fee_rate(account_id):
     """Your taker fee per side after Strike's volume tier, staking discount and referral discount, read from your public portfolio."""
     pf = get(f'/v2/portfolio?account_id={account_id}')
-    tiers = {t['Tier']: F(t['TakerRate']) for t in pf.get('fee_tiers', [])}
+    tiers = {t['Tier']: F(t['TakerRate']) for t in pf.get('fee_tiers') or []}
     base = tiers.get(pf.get('fee_tier', 0), 0.0005)
     stake = F(pf.get('staking_fee_discount_rate') or 0); ref = F(pf.get('fee_discount_rate') or 0) / 100
     return base * (1 - stake) * (1 - ref), dict(tier=pf.get('fee_tier', 0), base=base, staking=stake, referral=ref)

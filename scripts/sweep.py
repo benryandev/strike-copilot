@@ -112,7 +112,7 @@ def hl_universe():
             items, cur = {}, None
             for page in range(60):
                 d = get('/v2/copy/discover?top=10000&rank_by=pnl_30d&sort=copy_score&order=desc&pnl_window=30d&limit=200' + (f'&cursor={cur}' if cur else ''))
-                for it in d.get('items', []): items[it['address']] = it
+                for it in d.get('items') or []: items[it['address']] = it
                 cur = d.get('next_cursor')
                 if not cur or not d.get('items'): break
                 time.sleep(0.3)
@@ -166,7 +166,7 @@ def strike_stage(fee, mk, ex=()):
         items, cur = {}, None
         for _ in range(60):
             d = get('/v2/copy/discover?platform=strike&limit=200&sort=copy_score&order=desc' + (f'&cursor={cur}' if cur else ''))
-            for it in d.get('items', []): items[it['address']] = it
+            for it in d.get('items') or []: items[it['address']] = it
             cur = d.get('next_cursor')
             if not cur or not d.get('items'): break
             time.sleep(0.2)
@@ -179,7 +179,7 @@ def strike_stage(fee, mk, ex=()):
         a = it['address']; fp = OUT / 'fills' / f"s_{a[:12]}.json"
         if fp.exists(): fills = json.loads(fp.read_text())
         else: fills = strike_fills(a, since=T90, pages=20); fp.write_text(json.dumps(fills))
-        pf = get(f'/v2/portfolio?account_id={a}'); h = [(r[0], r[1]) for r in pf.get('history_perp_only', []) if F(r[1])]
+        pf = get(f'/v2/portfolio?account_id={a}'); h = [(r[0], r[1]) for r in pf.get('history_perp_only') or [] if F(r[1])]
         r = dict(addr=a, platform='strike', nickname=it.get('nickname'), eq=g(it, 'account_value'), pnl30=g(it, 'pnl', '30d'),
                  ageDays=(NOW - h[0][0]) / DAY if h else 0, wipes=wipes(h))
         own_pnl = [(f['symbol'], F(f['realized_pnl']) - F(f['fee'])) for f in fills if not (f.get('client_order_id') or '').startswith('copy:')]

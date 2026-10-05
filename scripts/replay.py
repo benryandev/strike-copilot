@@ -53,7 +53,7 @@ def hl_orders(lead, t0, now, mk):
 def strike_fills(acct, since=0, pages=200):
     fills, end = [], None
     for _ in range(pages):
-        r = get(f'/v2/history/fill?account_id={acct}&limit=1000' + (f'&endTime={end}' if end else '')).get('fills', [])
+        r = get(f'/v2/history/fill?account_id={acct}&limit=1000' + (f'&endTime={end}' if end else '')).get('fills') or []
         fills += r
         if len(r) < 1000 or min(f['timestamp'] for f in r) < since: break
         end = min(f['timestamp'] for f in r) - 1; time.sleep(0.2)
@@ -86,7 +86,7 @@ def lead_equity(lead):
     if is_hl(lead):
         h = sorted((int(t), F(v)) for t, v in dict(hl({'type': 'portfolio', 'user': lead.lower()}, list))['allTime']['accountValueHistory'])
     else:
-        h = [(int(r[0]), F(r[1])) for r in get(f'/v2/portfolio?account_id={lead}').get('history_perp_only', []) if F(r[1])]
+        h = [(int(r[0]), F(r[1])) for r in get(f'/v2/portfolio?account_id={lead}').get('history_perp_only') or [] if F(r[1])]
     ht = [t for t, _ in h]
     return lambda t: h[max(bisect.bisect_right(ht, t) - 1, 0)][1] if h else 0.0
 

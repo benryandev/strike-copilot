@@ -19,7 +19,7 @@ def main():
     print(f"== Account {'sub-account ' + sub if sub else 'main'} ({aid}) ==")
     bal, avail = F(acct.get('margin_balance') or acct.get('wallet_balance') or 0), F(acct.get('available_balance') or 0)
     pf = get(f'/v2/portfolio?account_id={aid}')
-    h = [(r[0], F(r[1]), F(r[2]) + F(r[3])) for r in pf.get('history_perp_only', []) if F(r[1]) or F(r[2])]
+    h = [(r[0], F(r[1]), F(r[2]) + F(r[3])) for r in pf.get('history_perp_only') or [] if F(r[1]) or F(r[2])]
     pk = dd = 0.0; eq_pk = 0.0
     for _, eq, tp in h: pk = max(pk, tp); eq_pk = max(eq_pk, eq); dd = tp - pk
     dd_pct = dd / eq_pk if eq_pk else 0
@@ -29,8 +29,8 @@ def main():
     print(f"  fee {f * 100:.4f}%/side (tier {parts['tier']}, staking -{parts['staking'] * 100:.0f}%, referral -{parts['referral'] * 100:.0f}%)")
 
     print('\n== Subscriptions ==')
-    subs = request('GET', '/v2/copy/subscriptions' + q).get('subscriptions', [])
-    lb = get('/v2/copy/leaderboard?status=active&limit=500').get('entries', [])
+    subs = request('GET', '/v2/copy/subscriptions' + q).get('subscriptions') or []
+    lb = get('/v2/copy/leaderboard?status=active&limit=500').get('entries') or []
     nc = collections.Counter(e['lead_account_id'].lower() for e in lb)
     if not subs: print('  none')
     for e in subs:
@@ -42,13 +42,13 @@ def main():
         lead_check(e['lead_account_id'], NOW, flags)
 
     print('\n== Your positions ==')
-    pos = request('GET', '/v2/positions' + q).get('positions', []) or []
+    pos = request('GET', '/v2/positions' + q).get('positions') or [] or []
     for x in pos:
         side = 1 if F(x['size']) > 0 else -1; mark = F(x.get('mark_price') or x['entry_price']); liq = F(x.get('liquidation_price') or 0)
         dist = (liq - mark) / mark * 100 * -side if liq else 0
         print(f"  {x['symbol']:12} {'LONG ' if side > 0 else 'SHORT'} ${abs(F(x['size'])) * mark:>9,.0f}  {x['margin_mode']} {x['leverage']}x  uPnL {F(x['upnl']):+,.2f}" + (f"  liquidation {dist:.1f}% away" if liq else ''))
     if not pos: print('  none')
-    fills = get(f'/v2/history/fill?account_id={aid}&limit=1000').get('fills', [])
+    fills = get(f'/v2/history/fill?account_id={aid}&limit=1000').get('fills') or []
     liqs = [x for x in fills if x.get('auto_close_type') and x['timestamp'] > NOW - 7 * DAY]
     if liqs: flags.append(f"{len(liqs)} of your copies were force-closed ({', '.join(sorted({x['symbol'] + ' ' + x['auto_close_type'] for x in liqs}))}) in the last 7 days.")
 
@@ -77,7 +77,7 @@ def lead_check(lead, NOW, flags):
             on = sum(F(x['closedPnl']) for x in wk if x['coin'] in to_sym); off = sum(F(x['closedPnl']) for x in wk if x['coin'] not in to_sym)
             share = sum(1 for x in wk if x['coin'] in to_sym) / len(wk) if wk else 0
         else:
-            fl = get(f'/v2/history/fill?account_id={lead}&limit=1000').get('fills', [])
+            fl = get(f'/v2/history/fill?account_id={lead}&limit=1000').get('fills') or []
             last = max((x['timestamp'] for x in fl), default=0); wk = [x for x in fl if x['timestamp'] > NOW - 7 * DAY]
             on = sum(F(x['realized_pnl']) - F(x['fee']) for x in wk); off = 0.0; share = 1.0 if wk else 0
         idle = (NOW - last) / DAY if last else 99

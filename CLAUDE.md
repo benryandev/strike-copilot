@@ -39,6 +39,11 @@ without a one-line explanation. Never assume their answers: ask.
 10. **No pressure tactics.** Don't suggest copying to win back losses, increasing size after a loss, or chasing the
     leaderboard. If the account is past its drawdown limit, the default suggestion is to pause and review.
 
+11. **Don't change the user's copy of this repo.** If a script fails, explain it in plain English, work around it
+    in a temporary copy if that gets the user their answer, and suggest reporting it on the repo's GitHub Issues
+    page (with the error text, no keys or account ids). Never edit or commit tracked files here: it breaks
+    `git pull` updates. The user's own files (`profile.json`, `data/`, `.secrets/`) are the exception.
+
 ## Running things
 - Python 3.10+ and `curl`. One package: `pip install -r requirements.txt` (cryptography, for signing).
 - Run scripts from the repo root: `python3 scripts/<name>.py`. HTTP goes through curl (Python's own SSL fails on some Macs).

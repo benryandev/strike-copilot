@@ -40,7 +40,7 @@ def main(lead):
             print(f"Very active account: only the last {(NOW - fills[0]['timestamp']) / DAY:.1f} days of fills were read (30,000 fills). "
                   "Accounts trading this often are usually bots whose edge is too thin to copy.")
         own = [f for f in fills if not (f.get('client_order_id') or '').startswith('copy:')]
-        h = [(r[0], r[1]) for r in get(f'/v2/portfolio?account_id={lead}').get('history_perp_only', []) if F(r[1])]
+        h = [(r[0], r[1]) for r in get(f'/v2/portfolio?account_id={lead}').get('history_perp_only') or [] if F(r[1])]
         age = (NOW - h[0][0]) / DAY if h else 0
         checks += [('On Strike for at least 14 days', age >= 14, f'{age:.0f} days'), ('Never wiped out', S.wipes(h) == 0, f'{S.wipes(h)} wipe-outs'),
                    ('Trades their own ideas (not mostly copying others)', len(own) >= 0.5 * len(fills) if fills else False, f'{len(own)} of {len(fills)} fills their own')]
@@ -52,7 +52,7 @@ def main(lead):
                ('Copy profitable over 90 days', m['sim90']['net'] > 0, f"{m['sim90']['net']:+,.0f} at $200 per entry, max drop {m['sim90']['mdd']:+,.0f}"),
                ('Copy profitable over 30 days', m['sim30']['net'] > 0, f"{m['sim30']['net']:+,.0f}, max drop {m['sim30']['mdd']:+,.0f}"),
                ('Fits your budget (>= $5 per entry)', fit >= 5, f"up to {m['sim90']['entries']} entries open at once -> ${fit:,.0f} per entry from ${budget:,.0f}")]
-    nc = sum(1 for e in get('/v2/copy/leaderboard?status=active&limit=500').get('entries', []) if e['lead_account_id'].lower() == lead.lower())
+    nc = sum(1 for e in get('/v2/copy/leaderboard?status=active&limit=500').get('entries') or [] if e['lead_account_id'].lower() == lead.lower())
     checks.append((f'Copier slots free ({COPIER_CAP} max)', nc < COPIER_CAP, f'{nc} copying now'))
     print(f"Period read: {m['orders']} orders on Strike markets ({m['opd']:.1f}/day): {', '.join(x[:-4] for x in m['markets'])}. Now: {live}.\n")
     for name, ok, detail in checks: print(f"  {'PASS' if ok else 'FAIL'}  {name}: {detail}")
