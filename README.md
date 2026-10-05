@@ -78,7 +78,7 @@ than the other one, the result says so, with both volumes. The choice itself fol
 1. Open Terminal (Mac) or PowerShell (Windows).
 2. Run:
    ```
-   git clone https://github.com/<github-user>/strike-copilot.git
+   git clone https://github.com/benryandev/strike-copilot.git
    cd strike-copilot
    python3 -m pip install -r requirements.txt
    ```
