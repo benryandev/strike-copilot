@@ -6,8 +6,10 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
 # Review
 
 1. `python3 scripts/update_check.py`:
-   - Repo updates: list them and ask "Want me to update? (git pull)". Pull only on yes. After pulling, re-read
-     CLAUDE.md and the skills, since the rules may have changed.
+   - Repo updates: summarise them in plain English (what changes for the user, not commit messages) and ask
+     "Want me to update?". Only on yes run `git pull -q` (no diffs or file listings: the user doesn't need them).
+     Then re-read CLAUDE.md and the skills, since the rules may have changed, and mention any new setup question
+     their profile hasn't answered yet.
    - Spec changes: mention them only if a change touches endpoints the scripts use (copy, account, positions,
      fills, portfolio, leverage, margin mode). Suggest checking GitHub for a repo update.
 2. `python3 scripts/account.py` and explain the result in plain English: balance, drop from peak vs their
