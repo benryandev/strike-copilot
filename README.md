@@ -95,7 +95,7 @@ than the other one, the result says so, with both volumes. The choice itself fol
 2. Unzip it somewhere you'll find again, e.g. your Documents folder.
 3. Open Terminal/PowerShell in that folder and run `python3 -m pip install -r requirements.txt`.
 
-<!-- screenshot: GitHub Code button > Download ZIP -->
+![GitHub: green Code button, then Download ZIP](docs/images/download-zip.png)
 
 **Start Claude in the folder:**
 1. In the same Terminal window (inside the `strike-copilot` folder), type `claude` and press Enter.
