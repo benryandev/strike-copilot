@@ -1,0 +1,2604 @@
+openapi: 3.0.3
+info:
+  title: Strike Perpetuals - Statistics API
+  description: >
+    Public statistics, analytics, and leaderboard endpoints served by the
+    Statistics Service.
+
+    Base path: `/v1`
+  version: 1.0.0
+  contact:
+    name: Strike Finance
+    url: https://www.strikefinance.org
+  x-gitbook-description-document:
+    object: document
+    data:
+      schemaVersion: 9
+    nodes:
+      - object: block
+        type: paragraph
+        isVoid: false
+        data: {}
+        nodes:
+          - object: text
+            leaves:
+              - object: leaf
+                text: >-
+                  Public statistics, analytics, and leaderboard endpoints served
+                  by the Statistics Service. Base path:
+                marks: []
+              - object: leaf
+                text: /v1
+                marks:
+                  - object: mark
+                    type: code
+                    data: {}
+            key: ycRLsF5A39g4
+        key: zcPX5BP77CEh
+    key: 8gINZ7xCLU8E
+  x-gitbook-description-html: >-
+    <p>Public statistics, analytics, and leaderboard endpoints served by the
+    Statistics Service. Base path: <code>/v1</code></p>
+servers:
+  - url: https://api.strikefinance.org/stat
+    description: Mainnet
+    x-gitbook-description-html: <p>Mainnet</p>
+  - url: https://api-v2-testnet.strikefinance.org/stat
+    description: Testnet
+    x-gitbook-description-html: <p>Testnet</p>
+tags:
+  - name: Platform Dashboard
+    description: Public platform-wide analytics (cached)
+    x-gitbook-description-html: <p>Public platform-wide analytics (cached)</p>
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Public platform-wide analytics (cached)
+                  marks: []
+              key: 3Zfhhz4iw7WS
+          key: 0isKh85CSHRa
+      key: kjZJOWHhAHLv
+  - name: Account Statistics
+    description: Per-account statistics and metrics
+    x-gitbook-description-html: <p>Per-account statistics and metrics</p>
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Per-account statistics and metrics
+                  marks: []
+              key: YjcX6GHjE3b8
+          key: i3avx10seHgj
+      key: dLMegiUciLNi
+  - name: Leaderboard
+    description: Trader rankings by PnL, volume, and fees
+    x-gitbook-description-html: <p>Trader rankings by PnL, volume, and fees</p>
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Trader rankings by PnL, volume, and fees
+                  marks: []
+              key: 6JVu0lCG7ugL
+          key: YVHqIAReskvV
+      key: wvPfqSKXkeQi
+  - name: Daily Statistics
+    description: Daily aggregated trading statistics
+    x-gitbook-description-html: <p>Daily aggregated trading statistics</p>
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Daily aggregated trading statistics
+                  marks: []
+              key: YyJYFdAjD1tv
+          key: xcqIoSOu4Aat
+      key: eE619oSa2Rdb
+  - name: Coin History
+    description: Time-series history data per symbol (cached)
+    x-gitbook-description-html: <p>Time-series history data per symbol (cached)</p>
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Time-series history data per symbol (cached)
+                  marks: []
+              key: Lp2aQ024YR8U
+          key: gTp7QdOUwpwv
+      key: oZGK9298hqQs
+  - name: Coin Statistics
+    description: Coin-level analytics — liquidation map, funding comparison (cached)
+    x-gitbook-description-html: <p>Coin-level analytics — liquidation map, funding comparison (cached)</p>
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: >-
+                    Coin-level analytics — liquidation map, funding comparison
+                    (cached)
+                  marks: []
+              key: WMoH2fNkIJmj
+          key: v42TmMDr8QhN
+      key: MGshDSCIQTzN
+x-tagGroups:
+  - name: Platform Analytics
+    tags:
+      - Platform Dashboard
+  - name: Accounts & Leaderboard
+    tags:
+      - Account Statistics
+      - Leaderboard
+  - name: Statistics
+    tags:
+      - Daily Statistics
+      - Coin History
+      - Coin Statistics
+paths:
+  /v1/dashboard/summary:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: Platform Summary
+      description: |
+        Returns high-level platform metrics: total users, volume, deposits,
+        withdrawals, liquidations, revenue, and current open interest.
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: Platform summary metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformSummary"
+              example:
+                total_users: 12345
+                total_volume_usd: "1234567890.50"
+                total_deposits_usd: "9876543.21"
+                total_withdrawals_usd: "5432100.00"
+                total_liquidated_usd: "123456.78"
+                total_revenue_usd: "654321.99"
+                open_interest_usd: "5000000.00"
+          x-gitbook-description-html: <p>Platform summary metrics</p>
+      x-gitbook-description-html: >-
+        <p>Returns high-level platform metrics: total users, volume, deposits,
+        withdrawals, liquidations, revenue, and current open
+        interest.</p><p>Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns high-level platform metrics: total users, volume,
+                      deposits, withdrawals, liquidations, revenue, and current
+                      open interest.
+                    marks: []
+                key: dSWpCaQLh59z
+            key: kZaUXECmwY0B
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: 8a0oBFwMauNt
+            key: 88q9T5XrPTUX
+        key: 1e1PQCVnrtk5
+  /v1/dashboard/volumes:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: Daily Volume Series
+      description: |
+        Returns daily trading volume by symbol as a compact time series.
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: Daily volume series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactSeriesWrapper"
+              example:
+                total_volume_daily:
+                  - - 1704067200000
+                    - BTC
+                    - 1234567.89
+                  - - 1704067200000
+                    - ETH
+                    - 987654.32
+                  - - 1704153600000
+                    - BTC
+                    - 1345678.9
+          x-gitbook-description-html: <p>Daily volume series</p>
+      x-gitbook-description-html: >-
+        <p>Returns daily trading volume by symbol as a compact time
+        series.</p><p>Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns daily trading volume by symbol as a compact time
+                      series.
+                    marks: []
+                key: VqrlF2Uge32d
+            key: 42kiydvIg6jF
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: GefHowJx0znA
+            key: JH6lf1pYiVT3
+        key: gkb7M3PpyPnX
+  /v1/dashboard/open-interest:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: Daily Open Interest Series
+      description: |
+        Returns average daily open interest by symbol as a compact time series.
+        Aggregated from periodic snapshots using AVG().
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: Daily open interest series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactSeriesWrapper"
+              example:
+                open_interest:
+                  - - 1704067200000
+                    - BTC
+                    - 5000000
+                  - - 1704067200000
+                    - ETH
+                    - 3000000
+          x-gitbook-description-html: <p>Daily open interest series</p>
+      x-gitbook-description-html: >-
+        <p>Returns average daily open interest by symbol as a compact time
+        series. Aggregated from periodic snapshots using AVG().</p><p>Cached
+        server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns average daily open interest by symbol as a compact
+                      time series. Aggregated from periodic snapshots using
+                      AVG().
+                    marks: []
+                key: piTicRTDx96l
+            key: iTkU3xP47T4C
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: dWbvBfLQtHdR
+            key: WZYDXAt06E83
+        key: AxoUXK5vTiMA
+  /v1/dashboard/annualized-funding-rate:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: Annualized Funding Rate Series
+      description: |
+        Returns daily annualized funding rates by symbol.
+        Calculated as `avg_rate * 365 * periods_per_day` where periods are
+        counted dynamically from funding payment timestamps.
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: Annualized funding rate series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactSeriesWrapper"
+              example:
+                annualized_funding_rate:
+                  - - 1704067200000
+                    - BTC
+                    - 0.0365
+                  - - 1704067200000
+                    - ETH
+                    - 0.0421
+          x-gitbook-description-html: <p>Annualized funding rate series</p>
+      x-gitbook-description-html: >-
+        <p>Returns daily annualized funding rates by symbol. Calculated as
+        <code>avg_rate * 365 * periods_per_day</code> where periods are counted
+        dynamically from funding payment timestamps.</p><p>Cached server-side
+        (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns daily annualized funding rates by symbol.
+                      Calculated as
+                    marks: []
+                  - object: leaf
+                    text: avg_rate * 365 * periods_per_day
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: " where periods are counted dynamically from funding payment timestamps."
+                    marks: []
+                key: FsFQjB4feKKH
+            key: 3YaalKkgCRb0
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: rGhNdB0yNj5Q
+            key: DlFKdxJVZpWf
+        key: dX0uRemCd7iY
+  /v1/dashboard/liquidations:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: Daily Liquidation Series
+      description: |
+        Returns daily notional liquidated value by symbol.
+        Only includes days with non-zero liquidations.
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: Daily liquidation series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactSeriesWrapper"
+              example:
+                daily_liquidations:
+                  - - 1704067200000
+                    - BTC
+                    - 100000.5
+                  - - 1704067200000
+                    - ETH
+                    - 50000.25
+          x-gitbook-description-html: <p>Daily liquidation series</p>
+      x-gitbook-description-html: >-
+        <p>Returns daily notional liquidated value by symbol. Only includes days
+        with non-zero liquidations.</p><p>Cached server-side (default 3
+        minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns daily notional liquidated value by symbol. Only
+                      includes days with non-zero liquidations.
+                    marks: []
+                key: SMqjAC9nOGsE
+            key: vIJIPMwOAS2l
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: QrEGL5Wp722X
+            key: dSwwZSN3Tpld
+        key: eZOI0kfWNudg
+  /v1/dashboard/users:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: User Engagement Series
+      description: |
+        Returns daily active users, new users, and unique traders by coin.
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: User engagement series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserEngagementSeries"
+              example:
+                daily_active_users:
+                  - - 1704067200000
+                    - 456
+                  - - 1704153600000
+                    - 512
+                new_users:
+                  - - 1704067200000
+                    - 23
+                  - - 1704153600000
+                    - 31
+                unique_traders_by_coin:
+                  - - 1704067200000
+                    - BTC
+                    - 234
+                  - - 1704067200000
+                    - ETH
+                    - 189
+          x-gitbook-description-html: <p>User engagement series</p>
+      x-gitbook-description-html: >-
+        <p>Returns daily active users, new users, and unique traders by
+        coin.</p><p>Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns daily active users, new users, and unique traders
+                      by coin.
+                    marks: []
+                key: F10DnKxTEWXq
+            key: 7Z7cn2kDbPBt
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: wNd4UHN87i19
+            key: DvMyJxFVq23n
+        key: mAxmHY7DYNJO
+  /v1/dashboard/trades:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: Daily Trade Count Series
+      description: |
+        Returns daily trade count by symbol as a compact time series.
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: Daily trade count series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactSeriesWrapper"
+              example:
+                daily_trades:
+                  - - 1704067200000
+                    - BTC
+                    - 12345
+                  - - 1704067200000
+                    - ETH
+                    - 8901
+          x-gitbook-description-html: <p>Daily trade count series</p>
+      x-gitbook-description-html: >-
+        <p>Returns daily trade count by symbol as a compact time
+        series.</p><p>Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns daily trade count by symbol as a compact time
+                      series.
+                    marks: []
+                key: MSE3IZg7Wxjd
+            key: ms6HC4M4IaP2
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: lkK3Ueq5f6nL
+            key: oCjfkNWJNpB0
+        key: UzjazaGbYy36
+  /v1/dashboard/transfers:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: Daily Transfer Series
+      description: |
+        Returns daily deposits and withdrawals grouped by blockchain.
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: Daily transfer series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferSeries"
+              example:
+                deposits:
+                  - - 1704067200000
+                    - Solana
+                    - 500000
+                  - - 1704067200000
+                    - Ethereum
+                    - 300000
+                withdrawals:
+                  - - 1704067200000
+                    - Solana
+                    - 200000
+                  - - 1704067200000
+                    - Ethereum
+                    - 150000
+          x-gitbook-description-html: <p>Daily transfer series</p>
+      x-gitbook-description-html: >-
+        <p>Returns daily deposits and withdrawals grouped by
+        blockchain.</p><p>Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns daily deposits and withdrawals grouped by
+                      blockchain.
+                    marks: []
+                key: GYzcjLKiJy6U
+            key: Dp4YCh092Thk
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: E8s2GbZ0nafk
+            key: kQVhmlxR1its
+        key: RB2LUGYNKk3G
+  /v1/dashboard/revenue:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: Daily Revenue Series
+      description: |
+        Returns daily revenue (trading fees) by symbol as a compact time series.
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: Daily revenue series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompactSeriesWrapper"
+              example:
+                total_revenue_daily:
+                  - - 1704067200000
+                    - BTC
+                    - 12345.67
+                  - - 1704067200000
+                    - ETH
+                    - 9876.54
+          x-gitbook-description-html: <p>Daily revenue series</p>
+      x-gitbook-description-html: >-
+        <p>Returns daily revenue (trading fees) by symbol as a compact time
+        series.</p><p>Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns daily revenue (trading fees) by symbol as a
+                      compact time series.
+                    marks: []
+                key: ftXqfEoj7Ujm
+            key: VCvcdQUaffZE
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: MLYlXhJ72luR
+            key: KCMMrReqr3UY
+        key: p9xrtzSxdW5r
+  /v1/dashboard/treasury:
+    get:
+      tags:
+        - Platform Dashboard
+      summary: Treasury Holdings
+      description: |
+        Returns treasury asset holdings over time.
+
+        Cached server-side (default 3 minutes).
+      responses:
+        "200":
+          description: Treasury holdings series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ColumnarResponse"
+              example:
+                columns:
+                  - ts
+                  - asset
+                  - quantity
+                data:
+                  - - 1704067200000
+                    - USDC
+                    - 1000000
+                  - - 1704067200000
+                    - USDT
+                    - 500000
+          x-gitbook-description-html: <p>Treasury holdings series</p>
+      x-gitbook-description-html: >-
+        <p>Returns treasury asset holdings over time.</p><p>Cached server-side
+        (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Returns treasury asset holdings over time.
+                    marks: []
+                key: JVSJA1BHRat2
+            key: pfPJ68Fu2TN9
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: LjydlE7Y649S
+            key: VMlG6zlydOq9
+        key: s3bCq8CbnVBN
+  /v1/stats/account/{account_id}:
+    get:
+      tags:
+        - Account Statistics
+      summary: Account Statistics
+      description: |
+        Returns comprehensive per-account statistics including PnL across
+        multiple time windows, volume, fees, and liquidation totals.
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The account ID.
+          x-gitbook-description-html: <p>The account ID.</p>
+      responses:
+        "200":
+          description: Account statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountStats"
+              example:
+                account_id: 0x123abc...
+                address: 0x456def...
+                account_value: "1000000.50"
+                realized_pnl:
+                  24h: "15000.00"
+                  7d: "35000.00"
+                  30d: "85000.00"
+                  all_time: "250000.00"
+                unrealized_pnl: "50000.00"
+                volume:
+                  24h: "500000.00"
+                  7d: "2500000.00"
+                  30d: "8000000.00"
+                  all_time: "25000000.00"
+                trading_fees: "125000.00"
+                funding_fees: "-50000.00"
+                liquidations: "10000.00"
+          x-gitbook-description-html: <p>Account statistics</p>
+        "400":
+          description: Missing account_id
+          content:
+            application/json:
+              example:
+                error: account_id is required
+          x-gitbook-description-html: <p>Missing account_id</p>
+      x-gitbook-description-html: >-
+        <p>Returns comprehensive per-account statistics including PnL across
+        multiple time windows, volume, fees, and liquidation totals.</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns comprehensive per-account statistics including PnL
+                      across multiple time windows, volume, fees, and
+                      liquidation totals.
+                    marks: []
+                key: ycVmTaLbhNhd
+            key: vd9ZXY0j4dsH
+        key: ciq0FS28W5ds
+  /v1/leaderboard:
+    get:
+      tags:
+        - Leaderboard
+      summary: Leaderboard
+      description: >
+        Returns the full leaderboard across multiple ranking types (realized
+        PnL,
+
+        volume, trading fees) with 24h, 7d, 30d, and all-time windows.
+
+
+        Data is served from a pre-computed Redis cache that refreshes
+        periodically.
+
+        Returns empty if cache is cold.
+
+
+        ### Entry format
+
+
+        Each entry in a leaderboard type is an array:
+
+        `[address, account_id, rank, account_value, [24h_stats], [7d_stats],
+        [30d_stats], [all_time_stats]]`
+
+
+        Each stats sub-array contains:
+
+        `[pnl_total, pnl_realized, volume, trading_fees, funding_fees,
+        liquidation, roi]`
+      responses:
+        "200":
+          description: Leaderboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardResponse"
+          x-gitbook-description-html: <p>Leaderboard data</p>
+      x-gitbook-description-html: >-
+        <p>Returns the full leaderboard across multiple ranking types (realized
+        PnL, volume, trading fees) with 24h, 7d, 30d, and all-time
+        windows.</p><p>Data is served from a pre-computed Redis cache that
+        refreshes periodically. Returns empty if cache is cold.</p><h3>Entry
+        format</h3><p>Each entry in a leaderboard type is an array:
+        <code>[address, account_id, rank, account_value, [24h_stats],
+        [7d_stats], [30d_stats], [all_time_stats]]</code></p><p>Each stats
+        sub-array contains: <code>[pnl_total, pnl_realized, volume,
+        trading_fees, funding_fees, liquidation, roi]</code></p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns the full leaderboard across multiple ranking types
+                      (realized PnL, volume, trading fees) with 24h, 7d, 30d,
+                      and all-time windows.
+                    marks: []
+                key: 8IMdSlPnuRuw
+            key: mmbcpfiT5uk7
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Data is served from a pre-computed Redis cache that
+                      refreshes periodically. Returns empty if cache is cold.
+                    marks: []
+                key: XU3fAKYPneHb
+            key: 9YBph6t6WQgm
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Entry format
+                    marks: []
+                key: zT6BxYlwZkp1
+            key: mETBfjaljeLD
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: "Each entry in a leaderboard type is an array: "
+                    marks: []
+                  - object: leaf
+                    text: >-
+                      [address, account_id, rank, account_value, [24h_stats],
+                      [7d_stats], [30d_stats], [all_time_stats]]
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                key: O2VYmhuOdrAa
+            key: HX543yj5Wzl6
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: "Each stats sub-array contains: "
+                    marks: []
+                  - object: leaf
+                    text: >-
+                      [pnl_total, pnl_realized, volume, trading_fees,
+                      funding_fees, liquidation, roi]
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                key: 30Lfx2qU5F6C
+            key: mYktdlUAAS6G
+        key: bzYdcvNDFQCR
+  /v1/leaderboard/rank/{account_id}:
+    get:
+      tags:
+        - Leaderboard
+      summary: Account Rank
+      description: |
+        Returns the rank of a specific account in the leaderboard for
+        a given ranking type and time period.
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The account ID to look up.
+          x-gitbook-description-html: <p>The account ID to look up.</p>
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - realized_pnl
+              - total_pnl
+              - volume
+              - trading_fees
+            default: realized_pnl
+          description: Ranking type.
+          x-gitbook-description-html: <p>Ranking type.</p>
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - 24h
+              - 7d
+              - 30d
+              - all_time
+            default: all_time
+          description: Time period.
+          x-gitbook-description-html: <p>Time period.</p>
+      responses:
+        "200":
+          description: Account rank
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountRank"
+              example:
+                account_id: 0x123abc...
+                type: realized_pnl
+                period: 24h
+                rank: 42
+                total: 5000
+          x-gitbook-description-html: <p>Account rank</p>
+      x-gitbook-description-html: >-
+        <p>Returns the rank of a specific account in the leaderboard for a given
+        ranking type and time period.</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns the rank of a specific account in the leaderboard
+                      for a given ranking type and time period.
+                    marks: []
+                key: 439zsRHBzRc3
+            key: vaW9Y5S9uZCs
+        key: iFZRCoOPUD7k
+  /v1/stats/daily:
+    get:
+      tags:
+        - Daily Statistics
+      summary: Daily Statistics
+      description: |
+        Returns daily aggregated trading statistics for a date range and symbol.
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: "Start date (YYYY-MM-DD). Default: 30 days ago."
+          x-gitbook-description-html: "<p>Start date (YYYY-MM-DD). Default: 30 days ago.</p>"
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: "End date (YYYY-MM-DD). Default: today."
+          x-gitbook-description-html: "<p>End date (YYYY-MM-DD). Default: today.</p>"
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ALL
+          description: "Symbol filter. Default: ALL (aggregated across all symbols)."
+          x-gitbook-description-html: "<p>Symbol filter. Default: ALL (aggregated across all symbols).</p>"
+      responses:
+        "200":
+          description: Daily statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyStatsResponse"
+              example:
+                start_date: "2024-01-01"
+                end_date: "2024-01-31"
+                symbol: BTC
+                data:
+                  - date: "2024-01-01"
+                    symbol: BTC
+                    volume: "5000000.00"
+                    volume_long: "3000000.00"
+                    volume_short: "2000000.00"
+                    realized_pnl: "150000.00"
+                    fee: "50000.00"
+                    revenue: "50000.00"
+                    funding_fee: "-25000.00"
+                    notional_liquidated: "10000.00"
+                    liquidation_fee: "100.00"
+                    trades: 1234
+                    trades_long: 750
+                    trades_short: 484
+          x-gitbook-description-html: <p>Daily statistics</p>
+      x-gitbook-description-html: >-
+        <p>Returns daily aggregated trading statistics for a date range and
+        symbol.</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns daily aggregated trading statistics for a date
+                      range and symbol.
+                    marks: []
+                key: f4PB1Y5y2Kks
+            key: 6QSSlE90zmsA
+        key: Z2PBNSHhpazx
+  /v1/stats/live-positions:
+    get:
+      tags:
+        - Daily Statistics
+      summary: Live Positions
+      description: |
+        Returns all currently open positions across all accounts with
+        real-time mark prices and calculated liquidation prices (5% MMR).
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter to a single symbol.
+          x-gitbook-description-html: <p>Filter to a single symbol.</p>
+      responses:
+        "200":
+          description: Live positions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ColumnarResponse"
+              example:
+                columns:
+                  - id
+                  - account_id
+                  - symbol
+                  - margin_mode
+                  - size
+                  - entry_price
+                  - mark_price
+                  - isolated_margin
+                  - cross_balance
+                  - accumulated_funding_fees
+                  - liquidation_price
+                data:
+                  - id: pos_123
+                    account_id: 0xaccount1
+                    symbol: BTC
+                    margin_mode: isolated
+                    size: "1.5"
+                    entry_price: "42000.00"
+                    mark_price: "43000.00"
+                    isolated_margin: "100000.00"
+                    cross_balance: "0.00"
+                    accumulated_funding_fees: "-500.00"
+                    liquidation_price: "40000.00"
+          x-gitbook-description-html: <p>Live positions</p>
+      x-gitbook-description-html: >-
+        <p>Returns all currently open positions across all accounts with
+        real-time mark prices and calculated liquidation prices (5% MMR).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns all currently open positions across all accounts
+                      with real-time mark prices and calculated liquidation
+                      prices (5% MMR).
+                    marks: []
+                key: SBLwJyCQQHfF
+            key: J9AVJKYMLPpD
+        key: JC6OQnrjXwr0
+  /v1/stats/daily/rerun:
+    post:
+      tags:
+        - Daily Statistics
+      summary: Re-Run Daily Stats ETL
+      description: |
+        Manually triggers the daily statistics ETL for a specific date.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Date to re-run (YYYY-MM-DD).
+          x-gitbook-description-html: <p>Date to re-run (YYYY-MM-DD).</p>
+      responses:
+        "200":
+          description: ETL completed
+          content:
+            application/json:
+              example:
+                message: daily statistics ETL completed successfully
+                date: "2024-01-15"
+          x-gitbook-description-html: <p>ETL completed</p>
+        "400":
+          description: Missing date parameter
+          content:
+            application/json:
+              example:
+                error: date parameter is required. use format YYYY-MM-DD
+          x-gitbook-description-html: <p>Missing date parameter</p>
+        "500":
+          description: ETL failed
+          content:
+            application/json:
+              example:
+                error: failed to re-run daily statistics
+                date: "2024-01-15"
+          x-gitbook-description-html: <p>ETL failed</p>
+      x-gitbook-description-html: <p>Manually triggers the daily statistics ETL for a specific date.</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Manually triggers the daily statistics ETL for a specific
+                      date.
+                    marks: []
+                key: 7EaqJaiseZ4i
+            key: 81jFbAAAkmdk
+        key: EnyL6vGL0ezb
+  /v1/stats/open-interest/snapshot:
+    post:
+      tags:
+        - Daily Statistics
+      summary: Trigger Open Interest Snapshot
+      description: |
+        Manually triggers an open interest snapshot.
+      responses:
+        "200":
+          description: Snapshot completed
+          content:
+            application/json:
+              example:
+                message: open interest snapshot completed successfully
+                timestamp: 1704067200000
+          x-gitbook-description-html: <p>Snapshot completed</p>
+        "500":
+          description: Snapshot failed
+          content:
+            application/json:
+              example:
+                error: failed to trigger open interest snapshot
+          x-gitbook-description-html: <p>Snapshot failed</p>
+      x-gitbook-description-html: <p>Manually triggers an open interest snapshot.</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Manually triggers an open interest snapshot.
+                    marks: []
+                key: aRcjoGT0Fx0L
+            key: 8DSenkuJO1bf
+        key: mrLT5WlEFtIS
+  /v1/stats/coin/history/open-interest:
+    get:
+      tags:
+        - Coin History
+      summary: Open Interest History
+      description: |
+        Returns open interest and volume history for a symbol, aggregated
+        by the specified interval. Cached server-side (default 3 minutes).
+
+        Time range = max_points x interval_duration.
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC
+          description: Symbol to query.
+          x-gitbook-description-html: <p>Symbol to query.</p>
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - 10m
+              - 15m
+              - 30m
+              - 1h
+              - 12h
+              - 1d
+            default: 10m
+          description: Aggregation interval.
+          x-gitbook-description-html: <p>Aggregation interval.</p>
+      responses:
+        "200":
+          description: Open interest history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+              example:
+                symbol: BTC
+                interval: 10m
+                columns:
+                  - ts
+                  - open_interest
+                  - volume
+                data:
+                  - - 1704067200000
+                    - 5000000
+                    - 100000
+                  - - 1704067800000
+                    - 5050000
+                    - 120000
+          x-gitbook-description-html: <p>Open interest history</p>
+        "400":
+          description: Missing symbol
+          content:
+            application/json:
+              example:
+                error: symbol parameter is required
+          x-gitbook-description-html: <p>Missing symbol</p>
+      x-gitbook-description-html: >-
+        <p>Returns open interest and volume history for a symbol, aggregated by
+        the specified interval. Cached server-side (default 3
+        minutes).</p><p>Time range = max_points x interval_duration.</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns open interest and volume history for a symbol,
+                      aggregated by the specified interval. Cached server-side
+                      (default 3 minutes).
+                    marks: []
+                key: 6CblurYxv5ag
+            key: E7W98105X4b1
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Time range = max_points x interval_duration.
+                    marks: []
+                key: ul1Kiu6QLhna
+            key: 5WNyQzQFGHYu
+        key: GAymHmpMbazE
+  /v1/stats/coin/history/funding:
+    get:
+      tags:
+        - Coin History
+      summary: Funding Rate History
+      description: |
+        Returns historical funding rates at 8-hour intervals for a symbol.
+        Cached server-side (default 3 minutes).
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC
+          description: Symbol to query.
+          x-gitbook-description-html: <p>Symbol to query.</p>
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 90
+            default: 30
+          description: Number of days of history.
+          x-gitbook-description-html: <p>Number of days of history.</p>
+      responses:
+        "200":
+          description: Funding rate history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+              example:
+                symbol: BTC
+                days: 30
+                columns:
+                  - ts
+                  - funding_rate
+                data:
+                  - - 1704067200000
+                    - 0.0001
+                  - - 1703980800000
+                    - 0.00012
+          x-gitbook-description-html: <p>Funding rate history</p>
+        "400":
+          description: Missing symbol
+          x-gitbook-description-html: <p>Missing symbol</p>
+      x-gitbook-description-html: >-
+        <p>Returns historical funding rates at 8-hour intervals for a symbol.
+        Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns historical funding rates at 8-hour intervals for a
+                      symbol. Cached server-side (default 3 minutes).
+                    marks: []
+                key: TIqiEaQcVHb4
+            key: kIbtcGnLSuxz
+        key: ASG5YxkdBD3I
+  /v1/stats/coin/history/basis:
+    get:
+      tags:
+        - Coin History
+      summary: Basis Rate History
+      description: |
+        Returns mark price, index price, and basis (mark - index) history
+        for a symbol. Cached server-side (default 3 minutes).
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC
+          description: Symbol to query.
+          x-gitbook-description-html: <p>Symbol to query.</p>
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - 10m
+              - 15m
+              - 30m
+              - 1h
+              - 12h
+              - 1d
+            default: 10m
+          description: Aggregation interval.
+          x-gitbook-description-html: <p>Aggregation interval.</p>
+      responses:
+        "200":
+          description: Basis rate history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+              example:
+                symbol: BTC
+                interval: 10m
+                columns:
+                  - ts
+                  - index_price
+                  - mark_price
+                  - basis
+                data:
+                  - - 1704067200000
+                    - 42000
+                    - 42100
+                    - 100
+                  - - 1704067800000
+                    - 42010
+                    - 42120
+                    - 110
+          x-gitbook-description-html: <p>Basis rate history</p>
+        "400":
+          description: Missing symbol
+          x-gitbook-description-html: <p>Missing symbol</p>
+      x-gitbook-description-html: >-
+        <p>Returns mark price, index price, and basis (mark - index) history for
+        a symbol. Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns mark price, index price, and basis (mark - index)
+                      history for a symbol. Cached server-side (default 3
+                      minutes).
+                    marks: []
+                key: zhYozRfmqUND
+            key: XQJrZMFA53YH
+        key: y1znnzLhMtDx
+  /v1/stats/coin/history/spread:
+    get:
+      tags:
+        - Coin History
+      summary: Bid-Ask Spread History
+      description: |
+        Returns bid-ask spread and ratio history for a symbol.
+
+        - `spread` = best_ask - best_bid
+        - `ratio` = (spread / mid_price) x 100
+
+        Cached server-side (default 3 minutes).
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC
+          description: Symbol to query.
+          x-gitbook-description-html: <p>Symbol to query.</p>
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - 10m
+              - 15m
+              - 30m
+              - 1h
+              - 12h
+              - 1d
+            default: 10m
+          description: Aggregation interval.
+          x-gitbook-description-html: <p>Aggregation interval.</p>
+      responses:
+        "200":
+          description: Bid-ask spread history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+              example:
+                symbol: BTC
+                interval: 10m
+                columns:
+                  - ts
+                  - spread
+                  - ratio
+                data:
+                  - - 1704067200000
+                    - 2.5
+                    - 0.00594
+                  - - 1704067800000
+                    - 2.75
+                    - 0.00653
+          x-gitbook-description-html: <p>Bid-ask spread history</p>
+        "400":
+          description: Missing symbol
+          x-gitbook-description-html: <p>Missing symbol</p>
+      x-gitbook-description-html: >-
+        <p>Returns bid-ask spread and ratio history for a
+        symbol.</p><ul><li><code>spread</code> = best_ask -
+        best_bid</li><li><code>ratio</code> = (spread / mid_price) x
+        100</li></ul><p>Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Returns bid-ask spread and ratio history for a symbol.
+                    marks: []
+                key: uv6dUssE6RCB
+            key: etMIbwIJmQA0
+          - object: block
+            type: list-unordered
+            isVoid: false
+            data: {}
+            nodes:
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: spread
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: " = best_ask - best_bid"
+                            marks: []
+                        key: QAdxMxo1ADvv
+                    key: RSV067ycWhq1
+                key: e4Gjjjjo40cD
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: ratio
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: " = (spread / mid_price) x 100"
+                            marks: []
+                        key: FVu5FdXeJmSL
+                    key: tFpzSXirVMQr
+                key: nJ6u267TuzjG
+            key: upIQUXNd2ard
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Cached server-side (default 3 minutes).
+                    marks: []
+                key: VbHdY9EkNLO5
+            key: P67Ol898Rsox
+        key: 1i4CzqeurMkC
+  /v1/stats/coin/history/oi-marketcap-ratio:
+    get:
+      tags:
+        - Coin History
+      summary: OI / Market Cap Ratio History
+      description: |
+        Returns open interest, market cap, and price history for a symbol.
+        Market cap is calculated as `circulating_supply x mark_price`.
+        Cached server-side (default 3 minutes).
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC
+          description: Symbol to query.
+          x-gitbook-description-html: <p>Symbol to query.</p>
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - 10m
+              - 15m
+              - 30m
+              - 1h
+              - 12h
+              - 1d
+            default: 10m
+          description: Aggregation interval.
+          x-gitbook-description-html: <p>Aggregation interval.</p>
+      responses:
+        "200":
+          description: OI / Market Cap ratio history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+              example:
+                symbol: BTC
+                interval: 10m
+                columns:
+                  - ts
+                  - open_interest
+                  - market_cap
+                  - price
+                data:
+                  - - 1704067200000
+                    - 5000000
+                    - 840000000000
+                    - 42000
+                  - - 1704067800000
+                    - 5050000
+                    - 842100000000
+                    - 42100
+          x-gitbook-description-html: <p>OI / Market Cap ratio history</p>
+        "400":
+          description: Missing symbol
+          x-gitbook-description-html: <p>Missing symbol</p>
+      x-gitbook-description-html: >-
+        <p>Returns open interest, market cap, and price history for a symbol.
+        Market cap is calculated as <code>circulating_supply x
+        mark_price</code>. Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns open interest, market cap, and price history for a
+                      symbol. Market cap is calculated as
+                    marks: []
+                  - object: leaf
+                    text: circulating_supply x mark_price
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: . Cached server-side (default 3 minutes).
+                    marks: []
+                key: efrF7OmLtnc1
+            key: u36foxBKDh85
+        key: YbUfxRVvzfV8
+  /v1/stats/coin/history/long-short-ratio:
+    get:
+      tags:
+        - Coin History
+      summary: Long / Short Ratio History
+      description: >
+        Returns long vs short position ratio history by value and by account
+        count.
+
+        Cached server-side (default 3 minutes).
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC
+          description: Symbol to query.
+          x-gitbook-description-html: <p>Symbol to query.</p>
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - 10m
+              - 15m
+              - 30m
+              - 1h
+              - 12h
+              - 1d
+            default: 10m
+          description: Aggregation interval.
+          x-gitbook-description-html: <p>Aggregation interval.</p>
+      responses:
+        "200":
+          description: Long / short ratio history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+              example:
+                symbol: BTC
+                interval: 10m
+                columns:
+                  - ts
+                  - long_percent
+                  - short_percent
+                  - long_short_ratio
+                  - long_value
+                  - short_value
+                  - long_count_percent
+                  - short_count_percent
+                  - holder_ratio
+                data:
+                  - - 1704067200000
+                    - 58.5
+                    - 41.5
+                    - 1.41
+                    - 2925000
+                    - 2075000
+                    - 52.3
+                    - 47.7
+                    - 1.09
+          x-gitbook-description-html: <p>Long / short ratio history</p>
+        "400":
+          description: Missing symbol
+          x-gitbook-description-html: <p>Missing symbol</p>
+      x-gitbook-description-html: >-
+        <p>Returns long vs short position ratio history by value and by account
+        count. Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns long vs short position ratio history by value and
+                      by account count. Cached server-side (default 3 minutes).
+                    marks: []
+                key: XGuHWEmPQNy7
+            key: YqOVDRo31kBU
+        key: OqF8qQVRjeH1
+  /v1/stats/coin/history/top-trader-long-short-ratio:
+    get:
+      tags:
+        - Coin History
+      summary: Top Trader Long / Short Ratio History
+      description: >
+        Same as long/short ratio but filtered to the top 20% of traders by
+        position size.
+
+        Cached server-side (default 3 minutes).
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC
+          description: Symbol to query.
+          x-gitbook-description-html: <p>Symbol to query.</p>
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - 10m
+              - 15m
+              - 30m
+              - 1h
+              - 12h
+              - 1d
+            default: 10m
+          description: Aggregation interval.
+          x-gitbook-description-html: <p>Aggregation interval.</p>
+      responses:
+        "200":
+          description: Top trader long / short ratio history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+              example:
+                symbol: BTC
+                interval: 10m
+                columns:
+                  - ts
+                  - long_percent
+                  - short_percent
+                  - long_short_ratio
+                  - long_value
+                  - short_value
+                  - long_count_percent
+                  - short_count_percent
+                  - holder_ratio
+                data:
+                  - - 1704067200000
+                    - 62
+                    - 38
+                    - 1.63
+                    - 1550000
+                    - 950000
+                    - 55
+                    - 45
+                    - 1.22
+          x-gitbook-description-html: <p>Top trader long / short ratio history</p>
+        "400":
+          description: Missing symbol
+          x-gitbook-description-html: <p>Missing symbol</p>
+      x-gitbook-description-html: >-
+        <p>Same as long/short ratio but filtered to the top 20% of traders by
+        position size. Cached server-side (default 3 minutes).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Same as long/short ratio but filtered to the top 20% of
+                      traders by position size. Cached server-side (default 3
+                      minutes).
+                    marks: []
+                key: TCEP77gcl3Qs
+            key: Oi0wmB71LxWJ
+        key: t1yg23ozOUVW
+  /v1/stats/coin/liquidation-map:
+    get:
+      tags:
+        - Coin Statistics
+      summary: Liquidation Map
+      description: |
+        Returns liquidation exposure at each price level with cumulative values.
+        Shows how much long and short position value would be liquidated at each
+        price bucket. Cached server-side (default 1 minute).
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC
+          description: Symbol to query.
+          x-gitbook-description-html: <p>Symbol to query.</p>
+        - name: bins
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 10
+            maximum: 1000
+            default: 200
+          description: Number of price bins.
+          x-gitbook-description-html: <p>Number of price bins.</p>
+      responses:
+        "200":
+          description: Liquidation map
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiquidationMapResponse"
+              example:
+                symbol: BTC
+                version: v123
+                snapshot_at: 1704067200000
+                bins: 200
+                columns:
+                  - price
+                  - long_base
+                  - short_base
+                  - cum_long_base
+                  - cum_short_base
+                data:
+                  - - 41000
+                    - 100.5
+                    - 50.2
+                    - 100.5
+                    - 5000
+                  - - 41500
+                    - 120.3
+                    - 60.1
+                    - 220.8
+                    - 4949.8
+                  - - 42000
+                    - 110.2
+                    - 70.3
+                    - 331
+                    - 4889.5
+          x-gitbook-description-html: <p>Liquidation map</p>
+        "400":
+          description: Missing symbol
+          x-gitbook-description-html: <p>Missing symbol</p>
+      x-gitbook-description-html: >-
+        <p>Returns liquidation exposure at each price level with cumulative
+        values. Shows how much long and short position value would be liquidated
+        at each price bucket. Cached server-side (default 1 minute).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns liquidation exposure at each price level with
+                      cumulative values. Shows how much long and short position
+                      value would be liquidated at each price bucket. Cached
+                      server-side (default 1 minute).
+                    marks: []
+                key: i9lE6yPosUXX
+            key: Rp5QAvjighwK
+        key: 4CjwuhQPy9Z8
+  /v1/stats/coin/funding-rate-comparison:
+    get:
+      tags:
+        - Coin Statistics
+      summary: Funding Rate Comparison
+      description: |
+        Compares the latest funding rates across Strike and external exchanges
+        (Bybit, Binance, OKX, Hyperliquid, Lighter).
+
+        Exchange entries are `null` if the exchange is not enabled in config.
+        Timestamps are Unix seconds (not milliseconds).
+        Cached server-side (default 1 minute).
+      responses:
+        "200":
+          description: Funding rate comparison
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FundingRateComparisonResponse"
+              example:
+                data:
+                  - symbol: BTC
+                    strike:
+                      rate: "0.00010000"
+                      timestamp: 1704067200
+                    bybit:
+                      rate: "0.00012000"
+                      timestamp: 1704067200
+                    binance:
+                      rate: "0.00011000"
+                      timestamp: 1704067200
+                    lighter: null
+                    okx:
+                      rate: "0.00009500"
+                      timestamp: 1704067200
+                    hyperliquid: null
+          x-gitbook-description-html: <p>Funding rate comparison</p>
+      x-gitbook-description-html: >-
+        <p>Compares the latest funding rates across Strike and external
+        exchanges (Bybit, Binance, OKX, Hyperliquid, Lighter).</p><p>Exchange
+        entries are <code>null</code> if the exchange is not enabled in config.
+        Timestamps are Unix seconds (not milliseconds). Cached server-side
+        (default 1 minute).</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Compares the latest funding rates across Strike and
+                      external exchanges (Bybit, Binance, OKX, Hyperliquid,
+                      Lighter).
+                    marks: []
+                key: UKSrS6d4f0fz
+            key: 0UxXJ6FttmzF
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: "Exchange entries are "
+                    marks: []
+                  - object: leaf
+                    text: "null"
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: " if the exchange is not enabled in config. Timestamps are Unix seconds (not milliseconds). Cached server-side (default 1 minute)."
+                    marks: []
+                key: NVAR9NT5wci3
+            key: XVx3z8L7qpV9
+        key: EjJtBD4PcZsQ
+components:
+  schemas:
+    PlatformSummary:
+      type: object
+      properties:
+        total_users:
+          type: integer
+          description: Total registered users.
+          x-gitbook-description-html: <p>Total registered users.</p>
+        total_volume_usd:
+          type: string
+          description: All-time trading volume in USD.
+          x-gitbook-description-html: <p>All-time trading volume in USD.</p>
+        total_deposits_usd:
+          type: string
+          description: All-time deposits in USD.
+          x-gitbook-description-html: <p>All-time deposits in USD.</p>
+        total_withdrawals_usd:
+          type: string
+          description: All-time withdrawals in USD.
+          x-gitbook-description-html: <p>All-time withdrawals in USD.</p>
+        total_liquidated_usd:
+          type: string
+          description: All-time notional liquidated in USD.
+          x-gitbook-description-html: <p>All-time notional liquidated in USD.</p>
+        total_revenue_usd:
+          type: string
+          description: All-time revenue (trading fees) in USD.
+          x-gitbook-description-html: <p>All-time revenue (trading fees) in USD.</p>
+        open_interest_usd:
+          type: string
+          description: Current total open interest in USD (from real-time data).
+          x-gitbook-description-html: <p>Current total open interest in USD (from real-time data).</p>
+    CompactSeriesWrapper:
+      type: object
+      description: >
+        Wrapper containing one or more compact series.
+
+        Each series is an array of tuples: `[timestamp_ms, symbol, value]` or
+        `[timestamp_ms, value]`.
+      additionalProperties:
+        type: array
+        items:
+          type: array
+      x-gitbook-description-html: >-
+        <p>Wrapper containing one or more compact series.
+
+        Each series is an array of tuples: <code>[timestamp_ms, symbol,
+        value]</code> or <code>[timestamp_ms, value]</code>.</p>
+    UserEngagementSeries:
+      type: object
+      properties:
+        daily_active_users:
+          type: array
+          description: "Compact series: `[timestamp_ms, count]`"
+          items:
+            type: array
+          x-gitbook-description-html: "<p>Compact series: <code>[timestamp_ms, count]</code></p>"
+        new_users:
+          type: array
+          description: "Compact series: `[timestamp_ms, count]`"
+          items:
+            type: array
+          x-gitbook-description-html: "<p>Compact series: <code>[timestamp_ms, count]</code></p>"
+        unique_traders_by_coin:
+          type: array
+          description: "Compact series: `[timestamp_ms, symbol, count]`"
+          items:
+            type: array
+          x-gitbook-description-html: "<p>Compact series: <code>[timestamp_ms, symbol, count]</code></p>"
+    TransferSeries:
+      type: object
+      properties:
+        deposits:
+          type: array
+          description: "Compact series: `[timestamp_ms, blockchain, amount]`"
+          items:
+            type: array
+          x-gitbook-description-html: >-
+            <p>Compact series: <code>[timestamp_ms, blockchain,
+            amount]</code></p>
+        withdrawals:
+          type: array
+          description: "Compact series: `[timestamp_ms, blockchain, amount]`"
+          items:
+            type: array
+          x-gitbook-description-html: >-
+            <p>Compact series: <code>[timestamp_ms, blockchain,
+            amount]</code></p>
+    AccountStats:
+      type: object
+      properties:
+        account_id:
+          type: string
+        address:
+          type: string
+        account_value:
+          type: string
+          description: Current account value in USD.
+          x-gitbook-description-html: <p>Current account value in USD.</p>
+        realized_pnl:
+          type: object
+          description: Realized PnL across time windows.
+          properties:
+            24h:
+              type: string
+            7d:
+              type: string
+            30d:
+              type: string
+            all_time:
+              type: string
+          x-gitbook-description-html: <p>Realized PnL across time windows.</p>
+        unrealized_pnl:
+          type: string
+        volume:
+          type: object
+          description: Trading volume across time windows.
+          properties:
+            24h:
+              type: string
+            7d:
+              type: string
+            30d:
+              type: string
+            all_time:
+              type: string
+          x-gitbook-description-html: <p>Trading volume across time windows.</p>
+        trading_fees:
+          type: string
+          description: All-time trading fees paid.
+          x-gitbook-description-html: <p>All-time trading fees paid.</p>
+        funding_fees:
+          type: string
+          description: All-time funding fees (negative = paid).
+          x-gitbook-description-html: <p>All-time funding fees (negative = paid).</p>
+        liquidations:
+          type: string
+          description: All-time liquidation value.
+          x-gitbook-description-html: <p>All-time liquidation value.</p>
+    LeaderboardResponse:
+      type: object
+      properties:
+        updated_at:
+          type: integer
+          format: int64
+          description: Cache timestamp (Unix ms).
+          x-gitbook-description-html: <p>Cache timestamp (Unix ms).</p>
+        leaderboards:
+          type: object
+          description: Keyed by ranking type (realized_pnl, volume, trading_fees).
+          additionalProperties:
+            type: object
+            properties:
+              entries:
+                type: array
+                description: >
+                  Array of entries. Each entry: `[address, account_id, rank,
+                  account_value, [24h_stats], [7d_stats], [30d_stats],
+                  [all_time_stats]]`. Stats sub-array: `[pnl_total,
+                  pnl_realized, volume, trading_fees, funding_fees, liquidation,
+                  roi]`.
+                items:
+                  type: array
+                x-gitbook-description-html: >-
+                  <p>Array of entries. Each entry: <code>[address, account_id,
+                  rank, account_value, [24h_stats], [7d_stats], [30d_stats],
+                  [all_time_stats]]</code>. Stats sub-array: <code>[pnl_total,
+                  pnl_realized, volume, trading_fees, funding_fees, liquidation,
+                  roi]</code>.</p>
+              updated_at:
+                type: integer
+                format: int64
+          x-gitbook-description-html: <p>Keyed by ranking type (realized_pnl, volume, trading_fees).</p>
+    AccountRank:
+      type: object
+      properties:
+        account_id:
+          type: string
+        type:
+          type: string
+          description: Ranking type used.
+          x-gitbook-description-html: <p>Ranking type used.</p>
+        period:
+          type: string
+          description: Time period used.
+          x-gitbook-description-html: <p>Time period used.</p>
+        rank:
+          type: integer
+          description: 1-based rank.
+          x-gitbook-description-html: <p>1-based rank.</p>
+        total:
+          type: integer
+          description: Total number of ranked accounts.
+          x-gitbook-description-html: <p>Total number of ranked accounts.</p>
+    DailyStatsResponse:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        symbol:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyStatsEntry"
+    DailyStatsEntry:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        symbol:
+          type: string
+        volume:
+          type: string
+        volume_long:
+          type: string
+        volume_short:
+          type: string
+        realized_pnl:
+          type: string
+        fee:
+          type: string
+        revenue:
+          type: string
+        funding_fee:
+          type: string
+        notional_liquidated:
+          type: string
+        liquidation_fee:
+          type: string
+        trades:
+          type: integer
+        trades_long:
+          type: integer
+        trades_short:
+          type: integer
+    ColumnarResponse:
+      type: object
+      description: Generic columnar response with column names and row data.
+      properties:
+        columns:
+          type: array
+          items:
+            type: string
+        data:
+          type: array
+          items: {}
+      x-gitbook-description-html: <p>Generic columnar response with column names and row data.</p>
+    HistoryResponse:
+      type: object
+      description: >
+        Time-series response. `columns` describes the fields in each row of
+        `data`.
+
+        Each row in `data` is an array matching the column order.
+      properties:
+        symbol:
+          type: string
+        interval:
+          type: string
+        days:
+          type: integer
+        columns:
+          type: array
+          items:
+            type: string
+        data:
+          type: array
+          items:
+            type: array
+      x-gitbook-description-html: >-
+        <p>Time-series response. <code>columns</code> describes the fields in
+        each row of <code>data</code>.
+
+        Each row in <code>data</code> is an array matching the column order.</p>
+    LiquidationMapResponse:
+      type: object
+      properties:
+        symbol:
+          type: string
+        version:
+          type: string
+          description: Snapshot version identifier.
+          x-gitbook-description-html: <p>Snapshot version identifier.</p>
+        snapshot_at:
+          type: integer
+          format: int64
+          description: Snapshot timestamp (Unix ms).
+          x-gitbook-description-html: <p>Snapshot timestamp (Unix ms).</p>
+        bins:
+          type: integer
+          description: Number of price bins returned.
+          x-gitbook-description-html: <p>Number of price bins returned.</p>
+        columns:
+          type: array
+          items:
+            type: string
+          example:
+            - price
+            - long_base
+            - short_base
+            - cum_long_base
+            - cum_short_base
+        data:
+          type: array
+          description: >
+            Array of rows: `[price, long_base, short_base, cum_long_base,
+            cum_short_base]`.
+          items:
+            type: array
+          x-gitbook-description-html: >-
+            <p>Array of rows: <code>[price, long_base, short_base,
+            cum_long_base, cum_short_base]</code>.</p>
+    FundingRateComparisonResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FundingRateComparisonEntry"
+    FundingRateComparisonEntry:
+      type: object
+      properties:
+        symbol:
+          type: string
+        strike:
+          $ref: "#/components/schemas/ExchangeFundingRate"
+        bybit:
+          $ref: "#/components/schemas/ExchangeFundingRateNullable"
+        binance:
+          $ref: "#/components/schemas/ExchangeFundingRateNullable"
+        lighter:
+          $ref: "#/components/schemas/ExchangeFundingRateNullable"
+        okx:
+          $ref: "#/components/schemas/ExchangeFundingRateNullable"
+        hyperliquid:
+          $ref: "#/components/schemas/ExchangeFundingRateNullable"
+    ExchangeFundingRate:
+      type: object
+      properties:
+        rate:
+          type: string
+          description: Funding rate as a decimal string.
+          x-gitbook-description-html: <p>Funding rate as a decimal string.</p>
+        timestamp:
+          type: integer
+          description: Unix seconds.
+          x-gitbook-description-html: <p>Unix seconds.</p>
+    ExchangeFundingRateNullable:
+      nullable: true
+      type: object
+      description: Null if exchange is not enabled.
+      properties:
+        rate:
+          type: string
+        timestamp:
+          type: integer
+      x-gitbook-description-html: <p>Null if exchange is not enabled.</p>

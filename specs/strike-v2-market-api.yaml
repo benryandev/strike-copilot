@@ -1,0 +1,2298 @@
+openapi: 3.0.3
+info:
+  title: Strike Market Data API
+  description: |
+    Public market-data endpoints served by the Price Service.
+    Base path: `/v2`
+  version: 2.0.0
+  contact:
+    name: Strike Finance
+    url: https://www.strikefinance.org
+  x-gitbook-description-document:
+    object: document
+    data:
+      schemaVersion: 9
+    nodes:
+      - object: block
+        type: paragraph
+        isVoid: false
+        data: {}
+        nodes:
+          - object: text
+            leaves:
+              - object: leaf
+                text: >-
+                  Public market-data endpoints served by the Price Service. Base
+                  path: 
+                marks: []
+              - object: leaf
+                text: /v2
+                marks:
+                  - object: mark
+                    type: code
+                    data: {}
+            key: odNDYJgb9JVw
+        key: 9WRwfYViRyrb
+    key: OndDFoLng0VF
+  x-gitbook-description-html: >-
+    <p>Public market-data endpoints served by the Price Service. Base path:
+    <code>/v2</code></p>
+servers:
+  - url: https://api.strikefinance.org/price
+    description: Mainnet
+    x-gitbook-description-html: <p>Mainnet</p>
+  - url: https://api-v2-testnet.strikefinance.org/price
+    description: Testnet
+    x-gitbook-description-html: <p>Testnet</p>
+tags:
+  - name: Order Book
+    description: Order book depth snapshots
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Order book depth snapshots
+                  marks: []
+              key: iiJ8noJRs890
+          key: GkvQkGJh0szY
+      key: CyhTIS9KBy0h
+    x-gitbook-description-html: <p>Order book depth snapshots</p>
+  - name: Trades
+    description: Recent trade data
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Recent trade data
+                  marks: []
+              key: 8E8pQIaippsL
+          key: IwpoKXz5MWBr
+      key: ZyTPF6b3JelB
+    x-gitbook-description-html: <p>Recent trade data</p>
+  - name: Prices
+    description: Mark price, index price, and funding rate
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Mark price, index price, and funding rate
+                  marks: []
+              key: tJgqNjkNy1ft
+          key: QQSWyO6wqI1c
+      key: XQfuu9GUV0Rd
+    x-gitbook-description-html: <p>Mark price, index price, and funding rate</p>
+  - name: Ticker
+    description: Rolling statistics, latest price, and best bid/ask
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Rolling statistics, latest price, and best bid/ask
+                  marks: []
+              key: oiECxPBmmEIg
+          key: x7fe4RxyKHHn
+      key: lQaaaE3t03Kt
+    x-gitbook-description-html: <p>Rolling statistics, latest price, and best bid/ask</p>
+  - name: Exchange Info
+    description: Trading rules and symbol information
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Trading rules and symbol information
+                  marks: []
+              key: QGhPGWBHZ64S
+          key: q3N61D8Q8tdM
+      key: PzVDFi4OY1iQ
+    x-gitbook-description-html: <p>Trading rules and symbol information</p>
+  - name: Klines
+    description: Candlestick / kline chart data
+    x-gitbook-description-html: <p>Candlestick / kline chart data</p>
+  - name: Open Interest
+    description: Open interest data
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: Open interest data
+                  marks: []
+              key: ShLP6NC5cOc8
+          key: WRIsjlWYITqU
+      key: 6XdTD6fKh4qZ
+    x-gitbook-description-html: <p>Open interest data</p>
+x-tagGroups:
+  - name: Market
+    tags:
+      - Order Book
+      - Trades
+      - Prices
+      - Ticker
+      - Exchange Info
+      - Klines
+      - Open Interest
+paths:
+  /v2/depth:
+    get:
+      tags:
+        - Order Book
+      summary: Order Book Depth
+      description: >
+        Returns a snapshot of the current order book for a given symbol.
+
+
+        ### Field semantics
+
+
+        | Field          | Type     | Description |
+
+        |----------------|----------|-------------|
+
+        | `lastUpdateId` | uint64   | Monotonically increasing sequence ID
+        assigned by the matching engine (`ctx.SequenceID`). This is a **real
+        update ID**, not a placeholder or timestamp. |
+
+        | `E`            | int64    | Snapshot event time — Unix milliseconds
+        when the matching engine produced the snapshot. |
+
+        | `T`            | int64    | Transaction time — same value as `E` for
+        this endpoint. Represents when the orderbook state was captured, **not**
+        the server response time. |
+
+        | `bids`         | string[][] | Bid levels sorted best (highest) first.
+        Each entry is `[price, quantity]`. |
+
+        | `asks`         | string[][] | Ask levels sorted best (lowest) first.
+        Each entry is `[price, quantity]`. |
+
+
+        ### Synchronising a local order book with WebSocket
+
+
+        1. **Initialise** — fetch this endpoint and record `lastUpdateId`.
+
+        2. **Connect** to the WebSocket stream `{symbol}@depth`.
+
+        3. **Drop** any WS `depthUpdate` event where `u <= lastUpdateId`.
+
+        4. **Apply** all subsequent events to update your local book.
+
+
+        > **Important:** per-symbol `+1` continuity between consecutive `u`
+        values
+
+        > is **not** guaranteed — the engine may skip IDs when no book change
+        occurs.
+
+        > Do **not** treat a gap as a missed update.
+
+
+        ### JS / TS consumers
+
+
+        `lastUpdateId` (and the WS fields `U` / `u`) can exceed
+        `Number.MAX_SAFE_INTEGER`.
+
+        Always parse them with a BigInt-safe method:
+
+
+        ```ts
+
+        // When parsing the REST response
+
+        const data = JSON.parse(text, (key, value) => {
+          if (key === "lastUpdateId") return BigInt(value);
+          return value;
+        });
+
+
+        // When parsing WS depthUpdate messages
+
+        const msg = JSON.parse(text, (key, value) => {
+          if (key === "U" || key === "u") return BigInt(value);
+          return value;
+        });
+
+        ```
+
+
+        ### Caching
+
+
+        Responses are cached server-side for **5 seconds** (short-TTL).
+
+        The `X-Cache` response header indicates `HIT` or `MISS`.
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC-USDT
+          description: Trading pair symbol.
+          x-gitbook-description-html: <p>Trading pair symbol.</p>
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 20
+          description: |
+            Maximum number of bid/ask levels to return (each side).
+            Clamped to 1000.
+          x-gitbook-description-html: |-
+            <p>Maximum number of bid/ask levels to return (each side).
+            Clamped to 1000.</p>
+      responses:
+        '200':
+          description: Order book snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderBookResponse'
+              example:
+                lastUpdateId: 1027024
+                E: 1700000000000
+                T: 1700000000000
+                bids:
+                  - - '43250.10'
+                    - '0.500'
+                  - - '43250.00'
+                    - '1.200'
+                asks:
+                  - - '43250.20'
+                    - '0.300'
+                  - - '43251.00'
+                    - '2.100'
+          x-gitbook-description-html: <p>Order book snapshot</p>
+        '400':
+          description: Missing or invalid symbol
+          content:
+            application/json:
+              example:
+                code: MISSING_PARAMETER
+                msg: symbol parameter is required
+          x-gitbook-description-html: <p>Missing or invalid symbol</p>
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              example:
+                code: INTERNAL_ERROR
+                msg: failed to retrieve orderbook
+          x-gitbook-description-html: <p>Internal error</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns a snapshot of the current order book for a given
+                      symbol.
+                    marks: []
+                key: U6mB6pICNGU1
+            key: tjbEXBJMIBUk
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Field semantics
+                    marks: []
+                key: wYT6YEryA3Y7
+            key: qJF8QdSpl0KC
+          - object: block
+            type: table
+            isVoid: true
+            data:
+              records:
+                o8cMXdpYUb1a:
+                  orderIndex: '0|hzzzof:'
+                  values:
+                    o9JT9q9SU8ud: THJJM4r1FDKF
+                    E6X9wDRrauXU: kKdMRJhmYjZj
+                    GHOBJMDlENep: JtEAtMMkiPhy
+                icAJvIaECtbD:
+                  orderIndex: '0|i00067:'
+                  values:
+                    o9JT9q9SU8ud: zqJawirib46V
+                    E6X9wDRrauXU: QaGGLVLK5kBX
+                    GHOBJMDlENep: okIOXMGexjYr
+                dIsmwDI1WEM8:
+                  orderIndex: '0|i0012n:'
+                  values:
+                    o9JT9q9SU8ud: i351rLQ3Rs5F
+                    E6X9wDRrauXU: qAjLYE85YQTN
+                    GHOBJMDlENep: 62mw9RkIEoy0
+                3V3TTnPP1ZKA:
+                  orderIndex: '0|i001ov:'
+                  values:
+                    o9JT9q9SU8ud: cvfNfRTi0e4T
+                    E6X9wDRrauXU: Cnswz263sRJC
+                    GHOBJMDlENep: W8Y0pCT3SQWg
+                dPS5Ds8xHKdo:
+                  orderIndex: '0|i001t3:'
+                  values:
+                    o9JT9q9SU8ud: 0rpabfkA53fE
+                    E6X9wDRrauXU: E0PFhrhqQtCN
+                    GHOBJMDlENep: shMEOTwu4jIe
+              definition:
+                o9JT9q9SU8ud:
+                  id: o9JT9q9SU8ud
+                  title: Field
+                  type: text
+                  textAlignment: left
+                E6X9wDRrauXU:
+                  id: E6X9wDRrauXU
+                  title: Type
+                  type: text
+                  textAlignment: left
+                GHOBJMDlENep:
+                  id: GHOBJMDlENep
+                  title: Description
+                  type: text
+                  textAlignment: left
+              view:
+                type: grid
+                columns:
+                  - o9JT9q9SU8ud
+                  - E6X9wDRrauXU
+                  - GHOBJMDlENep
+                useNewSizing: true
+                hideHeader: false
+                columnWidths: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: ''
+                    marks: []
+                key: mwkWdGsyybet
+            key: aC4AWOiHFn2T
+            fragments:
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: lastUpdateId
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: 6cgy05fR9T25
+                    key: bjuQWozCSdFT
+                key: Mh95EwPMTqgF
+                fragment: THJJM4r1FDKF
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: uint64
+                            marks: []
+                        key: 5RSVGiMtYB2T
+                    key: TkqVoV1GeZGP
+                key: RFLisa6z35GH
+                fragment: kKdMRJhmYjZj
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: >-
+                              Monotonically increasing sequence ID assigned by
+                              the matching engine (
+                            marks: []
+                          - object: leaf
+                            text: ctx.SequenceID
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: '). This is a '
+                            marks: []
+                          - object: leaf
+                            text: real update ID
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ', not a placeholder or timestamp.'
+                            marks: []
+                        key: 7XeJLse8xF7r
+                    key: m4gxzSrC5EBa
+                key: QERu9kkdSHG0
+                fragment: JtEAtMMkiPhy
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: E
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: VXScZ5oNDZq1
+                    key: bLMyE0PyOe1m
+                key: 9eQCyl7DoWo9
+                fragment: zqJawirib46V
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: int64
+                            marks: []
+                        key: WPr0BPA9QSqK
+                    key: 0FmLxthBsaCB
+                key: AzUIONP4t72k
+                fragment: QaGGLVLK5kBX
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: >-
+                              Snapshot event time — Unix milliseconds when the
+                              matching engine produced the snapshot.
+                            marks: []
+                        key: XNckPLyLV7O8
+                    key: wXTsRM2liHOH
+                key: vyzcipiG6RQm
+                fragment: okIOXMGexjYr
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: T
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: GeeiE69RP0s9
+                    key: J6cNhKZx0YzH
+                key: 2AIZgQQLoRnP
+                fragment: i351rLQ3Rs5F
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: int64
+                            marks: []
+                        key: IY2jxLoQUbEA
+                    key: nnBNGzzjtgxE
+                key: qUuHuaugJSw9
+                fragment: qAjLYE85YQTN
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: 'Transaction time — same value as '
+                            marks: []
+                          - object: leaf
+                            text: E
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ' for this endpoint. Represents when the orderbook state was captured, '
+                            marks: []
+                          - object: leaf
+                            text: not
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ' the server response time.'
+                            marks: []
+                        key: CIMGSAZ5tVje
+                    key: 2bst66MEOwv8
+                key: dhMvEb6PN3nc
+                fragment: 62mw9RkIEoy0
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: bids
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: jf8sIGBvjtqL
+                    key: ASh8TuFzwvYZ
+                key: D9zKrVRcbGS6
+                fragment: cvfNfRTi0e4T
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: string[][]
+                            marks: []
+                        key: vWxrS6fv4WQG
+                    key: exbk11GQjUX1
+                key: Qsvj2oQpB8Yo
+                fragment: Cnswz263sRJC
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: >-
+                              Bid levels sorted best (highest) first. Each entry
+                              is 
+                            marks: []
+                          - object: leaf
+                            text: '[price, quantity]'
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: .
+                            marks: []
+                        key: zCGc57DsAFH1
+                    key: HwWV7nv9w3o9
+                key: 9JPdlNC0GQyS
+                fragment: W8Y0pCT3SQWg
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: asks
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: gzlJtM8Srqgi
+                    key: 2Ka2TgWTUvwW
+                key: QMxCNjsJrMbz
+                fragment: 0rpabfkA53fE
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: string[][]
+                            marks: []
+                        key: tTXVViQT5zfH
+                    key: K9eD4s4Dq35c
+                key: IEiFst0lygfd
+                fragment: E0PFhrhqQtCN
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: >-
+                              Ask levels sorted best (lowest) first. Each entry
+                              is 
+                            marks: []
+                          - object: leaf
+                            text: '[price, quantity]'
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: .
+                            marks: []
+                        key: sltHhRRIGFnq
+                    key: 10uzwZpDBhg6
+                key: Utzt3hIQvEqh
+                fragment: shMEOTwu4jIe
+                type: table-cell
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Synchronising a local order book with WebSocket
+                    marks: []
+                key: grWyMNW2NPpK
+            key: KlBNzCsP6Iv4
+          - object: block
+            type: list-ordered
+            isVoid: false
+            data: {}
+            nodes:
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Initialise
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ' — fetch this endpoint and record '
+                            marks: []
+                          - object: leaf
+                            text: lastUpdateId
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: .
+                            marks: []
+                        key: qFYbCl1klWdk
+                    key: 5sIs6FgMQuGn
+                key: x4qeU28u4OXj
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Connect
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ' to the WebSocket stream '
+                            marks: []
+                          - object: leaf
+                            text: '{symbol}@depth'
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: .
+                            marks: []
+                        key: baK2ZRcmatCr
+                    key: IMUzd0F3Bgjk
+                key: VlbXsnBJ3n9a
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Drop
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ' any WS '
+                            marks: []
+                          - object: leaf
+                            text: depthUpdate
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ' event where '
+                            marks: []
+                          - object: leaf
+                            text: u <= lastUpdateId
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: .
+                            marks: []
+                        key: MDtTpP5Oezuj
+                    key: p0JLHIcNaQDl
+                key: cX6yx81q2HqR
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Apply
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ' all subsequent events to update your local book.'
+                            marks: []
+                        key: p1dDZmzgbzAF
+                    key: YmmzxqrSqSTD
+                key: DZPCdVFPq3s5
+            key: fYqj6fcLdeJv
+          - object: block
+            type: blockquote
+            isVoid: false
+            data: {}
+            nodes:
+              - object: block
+                type: paragraph
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: 'Important:'
+                        marks:
+                          - object: mark
+                            type: bold
+                            data: {}
+                      - object: leaf
+                        text: ' per-symbol '
+                        marks: []
+                      - object: leaf
+                        text: '+1'
+                        marks:
+                          - object: mark
+                            type: code
+                            data: {}
+                      - object: leaf
+                        text: ' continuity between consecutive '
+                        marks: []
+                      - object: leaf
+                        text: u
+                        marks:
+                          - object: mark
+                            type: code
+                            data: {}
+                      - object: leaf
+                        text: ' values is '
+                        marks: []
+                      - object: leaf
+                        text: not
+                        marks:
+                          - object: mark
+                            type: bold
+                            data: {}
+                      - object: leaf
+                        text: ' guaranteed — the engine may skip IDs when no book change occurs. Do '
+                        marks: []
+                      - object: leaf
+                        text: not
+                        marks:
+                          - object: mark
+                            type: bold
+                            data: {}
+                      - object: leaf
+                        text: ' treat a gap as a missed update.'
+                        marks: []
+                    key: hujUgJTlDJmj
+                key: 7nTt5UhsHgoK
+            key: doXOA23hXvK7
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: JS / TS consumers
+                    marks: []
+                key: JkXndP4RoM3q
+            key: X9F51xxaYC2Y
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: lastUpdateId
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' (and the WS fields '
+                    marks: []
+                  - object: leaf
+                    text: U
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' / '
+                    marks: []
+                  - object: leaf
+                    text: u
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ') can exceed '
+                    marks: []
+                  - object: leaf
+                    text: Number.MAX_SAFE_INTEGER
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: '. Always parse them with a BigInt-safe method:'
+                    marks: []
+                key: PUstI9E7Y53U
+            key: 5lz3hhyGAbKJ
+          - object: block
+            type: code
+            isVoid: false
+            data:
+              syntax: ts
+            nodes:
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: // When parsing the REST response
+                        marks: []
+                    key: sAoWgeVfCdef
+                key: vtXsvnJoy1q1
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: const data = JSON.parse(text, (key, value) => {
+                        marks: []
+                    key: drvGWUdUSd9P
+                key: MQp7Ih37f17G
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: '  if (key === "lastUpdateId") return BigInt(value);'
+                        marks: []
+                    key: REkRMpaXaDiH
+                key: snpDTV7TXayv
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: '  return value;'
+                        marks: []
+                    key: JAGQtryCNfGU
+                key: GHxrcdnIrkvw
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: '});'
+                        marks: []
+                    key: A7wyOtmVMhG9
+                key: J0f0is3IUXlF
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: ''
+                        marks: []
+                    key: Rb9bORGTt5DD
+                key: 4tdJDlZwrzSP
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: // When parsing WS depthUpdate messages
+                        marks: []
+                    key: 9u20S8vZMGMV
+                key: c6vLAuCzGGOJ
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: const msg = JSON.parse(text, (key, value) => {
+                        marks: []
+                    key: rFS4kncDyQHS
+                key: BL9VAw0DoqJE
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: '  if (key === "U" || key === "u") return BigInt(value);'
+                        marks: []
+                    key: 8e8lZ0GvTZZv
+                key: c0USP9PbBcke
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: '  return value;'
+                        marks: []
+                    key: y3y3y7kiRkpd
+                key: Al9m4co9zZNC
+              - object: block
+                type: code-line
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: text
+                    leaves:
+                      - object: leaf
+                        text: '});'
+                        marks: []
+                    key: aRk5szpo6C1l
+                key: 39njmTJ3MS7T
+            key: Na3NhrXwmnYk
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Caching
+                    marks: []
+                key: 0b5uO0anCTX3
+            key: TqZ1ZUIObEf3
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'Responses are cached server-side for '
+                    marks: []
+                  - object: leaf
+                    text: 5 seconds
+                    marks:
+                      - object: mark
+                        type: bold
+                        data: {}
+                  - object: leaf
+                    text: ' (short-TTL). The '
+                    marks: []
+                  - object: leaf
+                    text: X-Cache
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' response header indicates '
+                    marks: []
+                  - object: leaf
+                    text: HIT
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' or '
+                    marks: []
+                  - object: leaf
+                    text: MISS
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: .
+                    marks: []
+                key: 2YNiQjMkQCgX
+            key: IOTCoCEkWusU
+        key: fv5cJRXC51CO
+      x-gitbook-description-html: >-
+        <p>Returns a snapshot of the current order book for a given
+        symbol.</p><h3>Field
+        semantics</h3><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>lastUpdateId</code></td><td>uint64</td><td>Monotonically
+        increasing sequence ID assigned by the matching engine
+        (<code>ctx.SequenceID</code>). This is a <strong>real update
+        ID</strong>, not a placeholder or
+        timestamp.</td></tr><tr><td><code>E</code></td><td>int64</td><td>Snapshot
+        event time — Unix milliseconds when the matching engine produced the
+        snapshot.</td></tr><tr><td><code>T</code></td><td>int64</td><td>Transaction
+        time — same value as <code>E</code> for this endpoint. Represents when
+        the orderbook state was captured, <strong>not</strong> the server
+        response
+        time.</td></tr><tr><td><code>bids</code></td><td>string[][]</td><td>Bid
+        levels sorted best (highest) first. Each entry is <code>[price,
+        quantity]</code>.</td></tr><tr><td><code>asks</code></td><td>string[][]</td><td>Ask
+        levels sorted best (lowest) first. Each entry is <code>[price,
+        quantity]</code>.</td></tr></tbody></table><h3>Synchronising a local
+        order book with WebSocket</h3><ol><li><strong>Initialise</strong> —
+        fetch this endpoint and record
+        <code>lastUpdateId</code>.</li><li><strong>Connect</strong> to the
+        WebSocket stream
+        <code>{symbol}@depth</code>.</li><li><strong>Drop</strong> any WS
+        <code>depthUpdate</code> event where <code>u &#x3C;=
+        lastUpdateId</code>.</li><li><strong>Apply</strong> all subsequent
+        events to update your local
+        book.</li></ol><blockquote><p><strong>Important:</strong> per-symbol
+        <code>+1</code> continuity between consecutive <code>u</code> values is
+        <strong>not</strong> guaranteed — the engine may skip IDs when no book
+        change occurs. Do <strong>not</strong> treat a gap as a missed
+        update.</p></blockquote><h3>JS / TS
+        consumers</h3><p><code>lastUpdateId</code> (and the WS fields
+        <code>U</code> / <code>u</code>) can exceed
+        <code>Number.MAX_SAFE_INTEGER</code>. Always parse them with a
+        BigInt-safe method:</p><pre class="language-ts"><code class="lang-ts">//
+        When parsing the REST response
+
+        const data = JSON.parse(text, (key, value) => {
+          if (key === "lastUpdateId") return BigInt(value);
+          return value;
+        });
+
+
+        // When parsing WS depthUpdate messages
+
+        const msg = JSON.parse(text, (key, value) => {
+          if (key === "U" || key === "u") return BigInt(value);
+          return value;
+        });
+
+        </code></pre><h3>Caching</h3><p>Responses are cached server-side for
+        <strong>5 seconds</strong> (short-TTL). The <code>X-Cache</code>
+        response header indicates <code>HIT</code> or <code>MISS</code>.</p>
+  /v2/trades:
+    get:
+      tags:
+        - Trades
+      summary: Recent Trades
+      description: Returns the most recent trades for a symbol.
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC-USDT
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+          description: Number of trades to return. Clamped to 1000.
+          x-gitbook-description-html: <p>Number of trades to return. Clamped to 1000.</p>
+      responses:
+        '200':
+          description: List of recent trades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TradeResponse'
+              example:
+                - id: 12345
+                  price: '43250.10'
+                  qty: '0.500'
+                  quoteQty: '21625.05'
+                  time: 1700000000000
+                  isBuyerMaker: false
+          x-gitbook-description-html: <p>List of recent trades</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Returns the most recent trades for a symbol.
+                    marks: []
+                key: ROYHccNuNIHn
+            key: 0mEYAAgOsdFQ
+        key: dXovSXZpg8rq
+      x-gitbook-description-html: <p>Returns the most recent trades for a symbol.</p>
+  /v2/premiumIndex:
+    get:
+      tags:
+        - Prices
+      summary: Mark Price / Funding Rate
+      description: |
+        Returns mark price, index price, and funding rate information.
+        Omit `symbol` to return all symbols.
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+          example: BTC-USDT
+      responses:
+        '200':
+          description: Premium index data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PremiumIndexResponse'
+          x-gitbook-description-html: <p>Premium index data</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns mark price, index price, and funding rate
+                      information. Omit 
+                    marks: []
+                  - object: leaf
+                    text: symbol
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' to return all symbols.'
+                    marks: []
+                key: vM1FVQJnUjjO
+            key: IELHxx3p0rGI
+        key: 1gZMvQjEVogV
+      x-gitbook-description-html: >-
+        <p>Returns mark price, index price, and funding rate information. Omit
+        <code>symbol</code> to return all symbols.</p>
+  /v2/markPrice:
+    get:
+      tags:
+        - Prices
+      summary: Mark Price
+      description: >
+        Returns the current mark price snapshot (same shape as the WS
+        `markPriceUpdate` event).
+
+        Omit `symbol` to return all symbols.
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+          example: BTC-USD
+      responses:
+        '200':
+          description: Mark price snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkPriceResponse'
+              example:
+                e: markPriceUpdate
+                E: 1700000000000
+                s: BTC-USD
+                p: '43250.10'
+                i: '43240.50'
+                P: '43245.00'
+                r: '0.0001'
+                T: 1700003600000
+          x-gitbook-description-html: <p>Mark price snapshot</p>
+        '400':
+          description: Invalid symbol
+          content:
+            application/json:
+              example:
+                code: INVALID_SYMBOL
+                msg: symbol not found
+          x-gitbook-description-html: <p>Invalid symbol</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns the current mark price snapshot (same shape as the
+                      WS 
+                    marks: []
+                  - object: leaf
+                    text: markPriceUpdate
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' event). Omit '
+                    marks: []
+                  - object: leaf
+                    text: symbol
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' to return all symbols.'
+                    marks: []
+                key: PNQbyVB3fiqH
+            key: qjXg7zCIA8f6
+        key: 1QRXyi4NaDt9
+      x-gitbook-description-html: >-
+        <p>Returns the current mark price snapshot (same shape as the WS
+        <code>markPriceUpdate</code> event). Omit <code>symbol</code> to return
+        all symbols.</p>
+  /v2/indexPrice:
+    get:
+      tags:
+        - Prices
+      summary: Index Price
+      description: |
+        Returns the current index price snapshot.
+        Omit `symbol` to return all symbols.
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+          example: BTC-USD
+      responses:
+        '200':
+          description: Index price snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexPriceResponse'
+              example:
+                e: indexPriceUpdate
+                E: 1700000000000
+                s: BTC-USD
+                p: '43240.50'
+          x-gitbook-description-html: <p>Index price snapshot</p>
+        '400':
+          description: Invalid symbol
+          content:
+            application/json:
+              example:
+                code: INVALID_SYMBOL
+                msg: symbol not found
+          x-gitbook-description-html: <p>Invalid symbol</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'Returns the current index price snapshot. Omit '
+                    marks: []
+                  - object: leaf
+                    text: symbol
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' to return all symbols.'
+                    marks: []
+                key: ssHR0xKy8Cab
+            key: 4Q62NI11uzBp
+        key: Daj4Hv3Q5ak9
+      x-gitbook-description-html: >-
+        <p>Returns the current index price snapshot. Omit <code>symbol</code> to
+        return all symbols.</p>
+  /v2/ticker/24hr:
+    get:
+      tags:
+        - Ticker
+      summary: 24hr Ticker Statistics
+      description: |
+        Returns 24-hour rolling window price change statistics.
+        Omit `symbol` to return all symbols.
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+          example: BTC-USDT
+      responses:
+        '200':
+          description: 24hr ticker data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticker24hrResponse'
+          x-gitbook-description-html: <p>24hr ticker data</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns 24-hour rolling window price change statistics.
+                      Omit 
+                    marks: []
+                  - object: leaf
+                    text: symbol
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' to return all symbols.'
+                    marks: []
+                key: s1bKYnO1Hcdq
+            key: Ce3UL8i9aZlU
+        key: Zcpchbf3cRBk
+      x-gitbook-description-html: >-
+        <p>Returns 24-hour rolling window price change statistics. Omit
+        <code>symbol</code> to return all symbols.</p>
+  /v2/ticker/price:
+    get:
+      tags:
+        - Ticker
+      summary: Latest Price
+      description: |
+        Returns the latest price for a symbol.
+        Omit `symbol` to return all symbols.
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+          example: BTC-USDT
+      responses:
+        '200':
+          description: Latest price
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickerPriceResponse'
+          x-gitbook-description-html: <p>Latest price</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'Returns the latest price for a symbol. Omit '
+                    marks: []
+                  - object: leaf
+                    text: symbol
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' to return all symbols.'
+                    marks: []
+                key: 9kIByOq0wFFf
+            key: LH27sSwhJlv5
+        key: GkqhWsaqYOIx
+      x-gitbook-description-html: >-
+        <p>Returns the latest price for a symbol. Omit <code>symbol</code> to
+        return all symbols.</p>
+  /v2/ticker/bookTicker:
+    get:
+      tags:
+        - Ticker
+      summary: Best Bid / Ask
+      description: |
+        Returns best bid and ask prices and quantities.
+        Omit `symbol` to return all symbols.
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+          example: BTC-USDT
+      responses:
+        '200':
+          description: Book ticker
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookTickerResponse'
+          x-gitbook-description-html: <p>Book ticker</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'Returns best bid and ask prices and quantities. Omit '
+                    marks: []
+                  - object: leaf
+                    text: symbol
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' to return all symbols.'
+                    marks: []
+                key: 7la6ndMcguiy
+            key: InF2KdPpzrJW
+        key: 3aDnV5VlDjxi
+      x-gitbook-description-html: >-
+        <p>Returns best bid and ask prices and quantities. Omit
+        <code>symbol</code> to return all symbols.</p>
+  /v2/exchangeInfo:
+    get:
+      tags:
+        - Exchange Info
+      summary: Exchange Information
+      description: Returns trading rules and symbol information for all listed markets.
+      responses:
+        '200':
+          description: Exchange info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeInfoResponse'
+          x-gitbook-description-html: <p>Exchange info</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns trading rules and symbol information for all
+                      listed markets.
+                    marks: []
+                key: XsxRvQ4JZT0N
+            key: w4zRY85mA6wu
+        key: YEMFrtwldkUY
+      x-gitbook-description-html: >-
+        <p>Returns trading rules and symbol information for all listed
+        markets.</p>
+  /v2/klines:
+    get:
+      tags:
+        - Klines
+      summary: Kline / Candlestick Data
+      description: |
+        Returns candlestick (OHLCV) bars for a symbol.
+
+        Data is assembled from a cold store (PostgreSQL) and a hot store (Redis).
+        Missing candles between data points are gap-filled with the previous close price and zero volume.
+
+        ### Price types
+
+        | `priceType` | Description |
+        |-------------|-------------|
+        | `last`      | Last traded price (default). |
+        | `mark`      | Mark price — volume is overlaid from `last` klines. |
+        | `index`     | Index price — volume is overlaid from `last` klines. |
+
+        ### Response format
+
+        Each element is a JSON array (Binance-compatible):
+
+        | Index | Field           | Type   |
+        |-------|-----------------|--------|
+        | 0     | openTime        | int64  |
+        | 1     | open            | string |
+        | 2     | high            | string |
+        | 3     | low             | string |
+        | 4     | close           | string |
+        | 5     | volume          | string |
+        | 6     | closeTime       | int64  |
+        | 7     | quoteVolume     | string |
+        | 8     | trades          | int64  |
+        | 9     | takerBuyBase    | string |
+        | 10    | takerBuyQuote   | string |
+        | 11    | (unused)        | string |
+
+        ### Caching
+
+        Responses are cached server-side for **5 seconds** (short-TTL).
+        The `X-Cache` response header indicates `HIT` or `MISS`.
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+          example: BTC-USDT
+          description: Trading pair symbol.
+          x-gitbook-description-html: <p>Trading pair symbol.</p>
+        - name: interval
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - 1m
+              - 3m
+              - 5m
+              - 15m
+              - 30m
+              - 1h
+              - 2h
+              - 4h
+              - 6h
+              - 8h
+              - 12h
+              - 1d
+              - 3d
+              - 1w
+              - 1M
+          description: Kline interval.
+          x-gitbook-description-html: <p>Kline interval.</p>
+        - name: startTime
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Start time in Unix milliseconds (inclusive). Omit to let the server choose.
+          x-gitbook-description-html: <p>Start time in Unix milliseconds (inclusive). Omit to let the server choose.</p>
+        - name: endTime
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: End time in Unix milliseconds (inclusive). Omit to return up to the latest candle.
+          x-gitbook-description-html: <p>End time in Unix milliseconds (inclusive). Omit to return up to the latest candle.</p>
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1500
+            default: 500
+          description: Maximum number of candles to return. Clamped to 1500.
+          x-gitbook-description-html: <p>Maximum number of candles to return. Clamped to 1500.</p>
+        - name: priceType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - last
+              - mark
+              - index
+            default: last
+          description: |
+            Price series to use.
+            `mark` and `index` klines overlay volume from `last` klines.
+          x-gitbook-description-html: >-
+            <p>Price series to use. <code>mark</code> and <code>index</code> klines
+            overlay volume from <code>last</code> klines.</p>
+      responses:
+        '200':
+          description: Array of kline bars
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items: {}
+                  minItems: 12
+                  maxItems: 12
+                description: >-
+                  Each element is a 12-element array:
+                  [openTime, open, high, low, close, volume, closeTime, quoteVolume, trades, takerBuyBase, takerBuyQuote, "0"].
+                x-gitbook-description-html: >-
+                  <p>Each element is a 12-element array:
+                  [openTime, open, high, low, close, volume, closeTime, quoteVolume, trades, takerBuyBase, takerBuyQuote, &quot;0&quot;].</p>
+              example:
+                - - 1700000000000
+                  - '43250.10'
+                  - '43300.00'
+                  - '43200.50'
+                  - '43280.00'
+                  - '125.340'
+                  - 1700000059999
+                  - '5421750.00'
+                  - 312
+                  - '62.170'
+                  - '2690125.00'
+                  - '0'
+          x-gitbook-description-html: <p>Array of kline bars</p>
+        '400':
+          description: Missing or invalid parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: MISSING_PARAMETER
+                  msg:
+                    type: string
+                    example: symbol parameter is required
+          x-gitbook-description-html: <p>Missing or invalid parameter</p>
+      x-gitbook-description-html: >-
+        <p>Returns candlestick (OHLCV) bars for a symbol. Data is assembled from a cold store
+        (PostgreSQL) and a hot store (Redis). Missing candles between data points are gap-filled
+        with the previous close price and zero volume.</p>
+  /v2/openInterest:
+    get:
+      tags:
+        - Open Interest
+      summary: Open Interest
+      description: |
+        Returns current open interest in base-asset units.
+        Omit `symbol` to return all symbols.
+      parameters:
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+          example: BTCUSD
+      responses:
+        '200':
+          description: Open interest data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenInterestResponse'
+          x-gitbook-description-html: <p>Open interest data</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'Returns current open interest in base-asset units. Omit '
+                    marks: []
+                  - object: leaf
+                    text: symbol
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' to return all symbols.'
+                    marks: []
+                key: 4OkILAaBNryB
+            key: GldsYzXVmVVf
+        key: 6mDDFMlKju5T
+      x-gitbook-description-html: >-
+        <p>Returns current open interest in base-asset units. Omit
+        <code>symbol</code> to return all symbols.</p>
+components:
+  schemas:
+    OrderBookResponse:
+      type: object
+      properties:
+        lastUpdateId:
+          type: integer
+          format: uint64
+          description: Engine sequence ID. Monotonically increasing, **not** a timestamp.
+          x-gitbook-description-html: >-
+            <p>Engine sequence ID. Monotonically increasing,
+            <strong>not</strong> a timestamp.</p>
+        E:
+          type: integer
+          format: int64
+          description: Snapshot event time (Unix ms).
+          x-gitbook-description-html: <p>Snapshot event time (Unix ms).</p>
+        T:
+          type: integer
+          format: int64
+          description: Transaction time (Unix ms). Same value as `E` on this endpoint.
+          x-gitbook-description-html: >-
+            <p>Transaction time (Unix ms). Same value as <code>E</code> on this
+            endpoint.</p>
+        bids:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: 'Bid levels, best first. Each entry: `[price, quantity]`.'
+          x-gitbook-description-html: >-
+            <p>Bid levels, best first. Each entry: <code>[price,
+            quantity]</code>.</p>
+        asks:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: 'Ask levels, best first. Each entry: `[price, quantity]`.'
+          x-gitbook-description-html: >-
+            <p>Ask levels, best first. Each entry: <code>[price,
+            quantity]</code>.</p>
+    TradeResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        price:
+          type: string
+        qty:
+          type: string
+        quoteQty:
+          type: string
+        time:
+          type: integer
+          format: int64
+          description: Trade timestamp (Unix ms).
+          x-gitbook-description-html: <p>Trade timestamp (Unix ms).</p>
+        isBuyerMaker:
+          type: boolean
+    PremiumIndexResponse:
+      type: object
+      properties:
+        symbol:
+          type: string
+        markPrice:
+          type: string
+        indexPrice:
+          type: string
+        estimatedSettlePrice:
+          type: string
+        lastFundingRate:
+          type: string
+        nextFundingTime:
+          type: integer
+          format: int64
+        interestRate:
+          type: string
+        time:
+          type: integer
+          format: int64
+    Ticker24hrResponse:
+      type: object
+      properties:
+        symbol:
+          type: string
+        priceChange:
+          type: string
+        priceChangePercent:
+          type: string
+        weightedAvgPrice:
+          type: string
+        lastPrice:
+          type: string
+        lastQty:
+          type: string
+        openPrice:
+          type: string
+        highPrice:
+          type: string
+        lowPrice:
+          type: string
+        volume:
+          type: string
+        quoteVolume:
+          type: string
+        openTime:
+          type: integer
+          format: int64
+        closeTime:
+          type: integer
+          format: int64
+        firstId:
+          type: integer
+          format: int64
+        lastId:
+          type: integer
+          format: int64
+        count:
+          type: integer
+          format: int64
+    TickerPriceResponse:
+      type: object
+      properties:
+        symbol:
+          type: string
+        price:
+          type: string
+        time:
+          type: integer
+          format: int64
+    BookTickerResponse:
+      type: object
+      properties:
+        symbol:
+          type: string
+        bidPrice:
+          type: string
+        bidQty:
+          type: string
+        askPrice:
+          type: string
+        askQty:
+          type: string
+        time:
+          type: integer
+          format: int64
+    ExchangeInfoResponse:
+      type: object
+      properties:
+        timezone:
+          type: string
+        serverTime:
+          type: integer
+          format: int64
+        rateLimits:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateLimit'
+        symbols:
+          type: array
+          items:
+            $ref: '#/components/schemas/SymbolInfo'
+    RateLimit:
+      type: object
+      properties:
+        rateLimitType:
+          type: string
+        interval:
+          type: string
+        intervalNum:
+          type: integer
+        limit:
+          type: integer
+    SymbolInfo:
+      type: object
+      properties:
+        symbol:
+          type: string
+        pair:
+          type: string
+        contractType:
+          type: string
+          example: PERPETUAL
+        status:
+          type: string
+        baseAsset:
+          type: string
+        quoteAsset:
+          type: string
+        marginAsset:
+          type: string
+        pricePrecision:
+          type: integer
+        quantityPrecision:
+          type: integer
+        baseAssetPrecision:
+          type: integer
+        quotePrecision:
+          type: integer
+        underlyingType:
+          type: string
+        underlyingSubType:
+          type: array
+          items:
+            type: string
+        settlePlan:
+          type: integer
+        triggerProtect:
+          type: string
+        liquidationFee:
+          type: string
+        limitTakeBound:
+          type: string
+        marketTakeBound:
+          type: string
+        filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterInfo'
+        orderType:
+          type: array
+          items:
+            type: string
+        timeInForce:
+          type: array
+          items:
+            type: string
+    FilterInfo:
+      type: object
+      properties:
+        filterType:
+          type: string
+        maxPrice:
+          type: string
+        minPrice:
+          type: string
+        tickSize:
+          type: string
+        maxQty:
+          type: string
+        minQty:
+          type: string
+        stepSize:
+          type: string
+        limit:
+          type: integer
+        notional:
+          type: string
+        multiplierUp:
+          type: string
+        multiplierDown:
+          type: string
+        multiplierDecimal:
+          type: string
+    MarkPriceResponse:
+      type: object
+      properties:
+        e:
+          type: string
+          description: Event type (`markPriceUpdate`).
+          x-gitbook-description-html: <p>Event type (<code>markPriceUpdate</code>).</p>
+        E:
+          type: integer
+          format: int64
+          description: Event time (Unix ms).
+          x-gitbook-description-html: <p>Event time (Unix ms).</p>
+        s:
+          type: string
+          description: Symbol.
+          x-gitbook-description-html: <p>Symbol.</p>
+        p:
+          type: string
+          description: Mark price.
+          x-gitbook-description-html: <p>Mark price.</p>
+        i:
+          type: string
+          description: Index price.
+          x-gitbook-description-html: <p>Index price.</p>
+        P:
+          type: string
+          description: Estimated settle price.
+          x-gitbook-description-html: <p>Estimated settle price.</p>
+        r:
+          type: string
+          description: Funding rate.
+          x-gitbook-description-html: <p>Funding rate.</p>
+        T:
+          type: integer
+          format: int64
+          description: Next funding time (Unix ms).
+          x-gitbook-description-html: <p>Next funding time (Unix ms).</p>
+    IndexPriceResponse:
+      type: object
+      properties:
+        e:
+          type: string
+          description: Event type (`indexPriceUpdate`).
+          x-gitbook-description-html: <p>Event type (<code>indexPriceUpdate</code>).</p>
+        E:
+          type: integer
+          format: int64
+          description: Event time (Unix ms).
+          x-gitbook-description-html: <p>Event time (Unix ms).</p>
+        s:
+          type: string
+          description: Symbol.
+          x-gitbook-description-html: <p>Symbol.</p>
+        p:
+          type: string
+          description: Index price.
+          x-gitbook-description-html: <p>Index price.</p>
+    OpenInterestResponse:
+      type: object
+      properties:
+        symbol:
+          type: string
+        openInterest:
+          type: string
+          description: Open interest in base-asset units.
+          x-gitbook-description-html: <p>Open interest in base-asset units.</p>
+        time:
+          type: integer
+          format: int64

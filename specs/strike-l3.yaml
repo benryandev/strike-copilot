@@ -1,0 +1,225 @@
+openapi: 3.0.3
+info:
+  title: Strike L3 Market-by-Order API
+  description: |
+    Public HTTP API for bootstrapping the Strike Level 3 (L3)
+    market-by-order feed.
+
+    The snapshot contains every visible resting order for one symbol in
+    price/FIFO priority order. Use it together with the public L3 WebSocket
+    stream at `/ws/l3` to reconstruct and maintain a local order book.
+
+    No API wallet or scope request is required.
+    Decimal values are encoded as strings to preserve precision. Sequences and
+    timestamps are JSON numbers. Timestamps are Unix epoch milliseconds.
+
+    Bootstrap procedure:
+
+    1. Connect to `/ws/l3` and subscribe to `{symbol}@l3`.
+    2. Buffer `l3_update` events immediately.
+    3. Fetch this snapshot.
+    4. Build the local book at `last_sequence`.
+    5. Discard buffered updates whose sequence is less than or equal to
+       `last_sequence`, then apply every later update in contiguous order.
+
+    If a sequence gap or `clear` update is observed, stop applying updates and
+    repeat the bootstrap procedure. Snapshots are complete and are never
+    truncated or paginated.
+  version: 1.0.0
+  contact:
+    name: Strike Finance
+    url: https://www.strikefinance.org
+servers:
+  - url: https://api.strikefinance.org
+    description: Mainnet
+  - url: https://api-v2-testnet.strikefinance.org
+    description: Testnet
+tags:
+  - name: L3 Market Data
+    description: Public Level 3 market-by-order snapshots.
+security: []
+paths:
+  /v2/l3/snapshot:
+    get:
+      tags:
+        - L3 Market Data
+      summary: Get an L3 order-book snapshot
+      description: |
+        Returns every visible resting order for the requested symbol at one
+        coherent per-symbol sequence.
+
+        Bids are sorted from highest to lowest price and asks from lowest to
+        highest price. Orders at the same price are listed in actual FIFO
+        priority order. The response is complete and is not paginated.
+
+        The current initial L3 symbol is `BTC-USD`. The enabled symbol list can
+        expand over time; an unsupported symbol returns `400`.
+      operationId: getL3Snapshot
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          description: |
+            Hyphen-separated market symbol. Input is case-insensitive and the
+            response uses canonical uppercase form.
+          schema:
+            type: string
+            minLength: 1
+          example: BTC-USD
+      responses:
+        "200":
+          description: Complete L3 snapshot at the advertised sequence.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/L3Snapshot"
+              example:
+                type: l3_snapshot
+                symbol: BTC-USD
+                last_sequence: 918274
+                timestamp: 1785480000200
+                bids:
+                  - price: "117500.00"
+                    orders:
+                      - order_id: YL8wLzJfqGW_uIZ7qvzu5A
+                        size: "0.11"
+                      - order_id: 8CfeN3BBBOJLhNIx5ekcVw
+                        size: "2.00"
+                asks:
+                  - price: "117510.00"
+                    orders:
+                      - order_id: B0PmzcS4Zo9Dft7jLFzl8Q
+                        size: "0.50"
+        "400":
+          description: The symbol is missing or is not enabled for L3.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: unsupported or missing symbol
+        "403":
+          description: The endpoint is not available on the requested host.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: L3 is unavailable on this host
+        "429":
+          description: The per-source-IP public request limit was exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: L3 request limit exceeded
+        "503":
+          description: L3 state, publisher readiness, or request limiting is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                snapshotUnavailable:
+                  summary: Snapshot state is unavailable
+                  value:
+                    error: L3 snapshot unavailable
+                limiterUnavailable:
+                  summary: Distributed request limiting is unavailable
+                  value:
+                    error: L3 request limit unavailable
+components:
+  schemas:
+    L3Snapshot:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - symbol
+        - last_sequence
+        - timestamp
+        - bids
+        - asks
+      properties:
+        type:
+          type: string
+          enum:
+            - l3_snapshot
+          description: Snapshot message discriminator.
+        symbol:
+          type: string
+          description: Canonical hyphen-separated market symbol.
+          example: BTC-USD
+        last_sequence:
+          type: integer
+          minimum: 0
+          description: |
+            Latest per-symbol L3 sequence included in this snapshot. Apply the
+            next WebSocket update only when its sequence is
+            `last_sequence + 1`.
+          example: 918274
+        timestamp:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Snapshot construction time in Unix epoch milliseconds.
+          example: 1785480000200
+        bids:
+          type: array
+          description: Bid levels in descending numeric price order.
+          items:
+            $ref: "#/components/schemas/L3PriceLevel"
+        asks:
+          type: array
+          description: Ask levels in ascending numeric price order.
+          items:
+            $ref: "#/components/schemas/L3PriceLevel"
+    L3PriceLevel:
+      type: object
+      additionalProperties: false
+      required:
+        - price
+        - orders
+      properties:
+        price:
+          $ref: "#/components/schemas/PositiveDecimalString"
+        orders:
+          type: array
+          minItems: 1
+          description: Visible resting orders at this price in FIFO priority order.
+          items:
+            $ref: "#/components/schemas/L3SnapshotOrder"
+    L3SnapshotOrder:
+      type: object
+      additionalProperties: false
+      required:
+        - order_id
+        - size
+      properties:
+        order_id:
+          type: string
+          minLength: 1
+          description: |
+            Stable opaque public ID for this visible order lifetime. It is not
+            an account order ID or client order ID and must be treated as an
+            uninterpreted, case-sensitive string.
+          example: YL8wLzJfqGW_uIZ7qvzu5A
+        size:
+          allOf:
+            - $ref: "#/components/schemas/PositiveDecimalString"
+          description: Remaining visible order size in base-asset units.
+    PositiveDecimalString:
+      type: string
+      pattern: '^(?:0*[1-9][0-9]*)(?:\.[0-9]+)?$|^0*\.(?:[0-9]*[1-9][0-9]*)$'
+      description: Positive base-10 decimal encoded as a JSON string.
+      example: "0.11"
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.

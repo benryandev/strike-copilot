@@ -1,0 +1,3714 @@
+openapi: 3.0.3
+info:
+  title: Strike Builder API
+  description: |
+    User-facing endpoints for the Builder Codes integration flow.
+    Includes wallet-signature authentication, deposit, and withdrawal flows.
+    Base path: `/v2` (deposit/withdraw) and `/auth` (connect flow)
+  version: 2.0.0
+  contact:
+    name: Strike Finance
+    url: https://www.strikefinance.org
+  x-gitbook-description-document:
+    object: document
+    data:
+      schemaVersion: 9
+    nodes:
+      - object: block
+        type: paragraph
+        isVoid: false
+        data: {}
+        nodes:
+          - object: text
+            leaves:
+              - object: leaf
+                text: >-
+                  User-facing endpoints for the Builder Codes integration flow.
+                  Includes wallet-signature authentication, deposit, and
+                  withdrawal flows. Base path: 
+                marks: []
+              - object: leaf
+                text: /v2
+                marks:
+                  - object: mark
+                    type: code
+                    data: {}
+              - object: leaf
+                text: ' (deposit/withdraw) and '
+                marks: []
+              - object: leaf
+                text: /auth
+                marks:
+                  - object: mark
+                    type: code
+                    data: {}
+              - object: leaf
+                text: ' (connect flow)'
+                marks: []
+            key: a6ALilgO3CAL
+        key: YIffJ9ynjT9m
+    key: DKIhKmQEEBLn
+  x-gitbook-description-html: >-
+    <p>User-facing endpoints for the Builder Codes integration flow. Includes
+    wallet-signature authentication, deposit, and withdrawal flows. Base path:
+    <code>/v2</code> (deposit/withdraw) and <code>/auth</code> (connect
+    flow)</p>
+servers:
+  - url: https://api.strikefinance.org
+    description: Mainnet
+    x-gitbook-description-html: <p>Mainnet</p>
+  - url: https://api-v2-testnet.strikefinance.org
+    description: Testnet
+    x-gitbook-description-html: <p>Testnet</p>
+tags:
+  - name: Builder Connect
+    description: >-
+      Public wallet-signature flow that connects a user to a builder. No JWT or
+      prior Strike account required — new users are created automatically.
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: >-
+                    Public wallet-signature flow that connects a user to a
+                    builder. No JWT or prior Strike account required — new users
+                    are created automatically.
+                  marks: []
+              key: hYEx7gFJgEeP
+          key: 7zfB09VtsCU8
+      key: Pt1YZCkQOT83
+    x-gitbook-description-html: >-
+      <p>Public wallet-signature flow that connects a user to a builder. No JWT
+      or prior Strike account required — new users are created
+      automatically.</p>
+  - name: Deposit
+    description: >-
+      Three-step deposit flow: quote → build unsigned transaction → confirm with
+      tx hash. The user's wallet signs the on-chain transaction. The builder
+      cannot redirect funds — the deposit address is Strike's vault address,
+      hardcoded in backend config.
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: >-
+                    Three-step deposit flow: quote → build unsigned transaction
+                    → confirm with tx hash. The user's wallet signs the on-chain
+                    transaction. The builder cannot redirect funds — the deposit
+                    address is Strike's vault address, hardcoded in backend
+                    config.
+                  marks: []
+              key: wGmpGsqroORu
+          key: 86jGUq6tRt5M
+      key: INjYJ9dQkB02
+    x-gitbook-description-html: >-
+      <p>Three-step deposit flow: quote → build unsigned transaction → confirm
+      with tx hash. The user's wallet signs the on-chain transaction. The
+      builder cannot redirect funds — the deposit address is Strike's vault
+      address, hardcoded in backend config.</p>
+  - name: Withdraw
+    description: >-
+      Shared withdrawal flow for Ethereum, Solana, and Cardano: quote → confirm
+      with wallet signature. There are no Cardano-only public withdrawal
+      endpoints; set `blockchain: cardano` on the shared endpoints. Cardano
+      quotes may include funding transaction fields that must be signed and
+      returned during confirmation. The backend automatically uses the account's
+      registered wallet address as the recipient. For Builder Codes, these
+      endpoints are called with the API wallet created by the Builder Connect
+      flow and are scoped to that connected user account. The builder cannot
+      redirect withdrawals or withdraw without the user's wallet signature.
+    x-gitbook-description-document:
+      object: document
+      data:
+        schemaVersion: 9
+      nodes:
+        - object: block
+          type: paragraph
+          isVoid: false
+          data: {}
+          nodes:
+            - object: text
+              leaves:
+                - object: leaf
+                  text: >-
+                    Shared withdrawal flow for Ethereum, Solana, and Cardano:
+                    quote → confirm with wallet signature. There are no
+                    Cardano-only public withdrawal endpoints; set `blockchain:
+                    cardano` on the shared endpoints. Cardano quotes may include
+                    funding transaction fields that must be signed and returned
+                    during confirmation. The backend automatically uses the
+                    account's registered wallet address as the recipient. For
+                    Builder Codes, these endpoints are called with the API
+                    wallet created by the Builder Connect flow and are scoped to
+                    that connected user account. The builder cannot redirect
+                    withdrawals or withdraw without the user's wallet signature.
+                  marks: []
+              key: CGXEeRDKdloO
+          key: zhhsgwS0I62j
+      key: sjqj49X9yvSG
+    x-gitbook-description-html: >-
+      <p>Shared withdrawal flow for Ethereum, Solana, and Cardano: quote →
+      confirm with wallet signature. There are no Cardano-only public withdrawal
+      endpoints; set <code>blockchain: cardano</code> on the shared endpoints.
+      Cardano quotes may include funding transaction fields that must be signed
+      and returned during confirmation. The backend automatically uses the
+      account's registered wallet address as the recipient. For Builder Codes,
+      these endpoints are called with the API wallet created by the Builder
+      Connect flow and are scoped to that connected user account. The builder
+      cannot redirect withdrawals or withdraw without the user's wallet
+      signature.</p>
+x-tagGroups:
+  - name: Builder
+    tags:
+      - Builder Connect
+      - Deposit
+      - Withdraw
+paths:
+  /auth/builder/request-signature:
+    post:
+      tags:
+        - Builder Connect
+      summary: Request Signature Challenge
+      description: |
+        Returns a challenge message for the user to sign in their wallet
+        (Phantom, Rabby, Nami). This is the first step of the builder
+        connect flow.
+
+        The dApp generates an Ed25519 keypair client-side, then sends
+        the public key along with the user's wallet address, chain,
+        builder code, fee approval, and an optional referral code.
+
+        When `referral_code` is supplied, referral attribution is opt-in.
+        The code must be the canonical or customized referral code owned by
+        the account that owns the builder code. Omit it to connect without
+        accepting a referral.
+
+        ### Validation
+
+        - `chain` must be `ethereum`, `solana`, or `cardano`
+        - `public_key` must be exactly 64 hex characters (Ed25519)
+        - `code` must reference an existing, active builder
+        - `fee_share_bps` must be between 0 and 100
+        - Optional `referral_code` must belong to the builder-code owner
+
+        The returned `nonce` expires after 5 minutes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestSignatureRequest'
+            example:
+              address: 9WzDXwBhzVFT...
+              chain: solana
+              code: minswap
+              fee_share_bps: 50
+              public_key: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+              referral_code: MINDSWAP
+      responses:
+        '200':
+          description: Signature challenge created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestSignatureResponse'
+              example:
+                nonce: 019d4a2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b
+                message_to_sign: |-
+                  Connect to Strike via builder "minswap".
+                  This authorizes the builder to collect up to 0.5% fee on your trades.
+                  Referral attribution: builder "minswap" will be recorded as your permanent referrer if you do not already have one.
+                  Referral code: MINDSWAP.
+                  By signing, you are entrusting your API wallet private key to this builder. You trust the builder to store and use this key responsibly.
+                  Wallet: 9WzDXwBhzVFT...
+                  Chain: solana
+                  API Key: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+                  Nonce: 019d4a2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b
+                  Timestamp: 2026-04-01T12:00:00Z
+
+                  Complete verify-signature within 5 minutes; after that the challenge expires.
+                message: |-
+                  Connect to Strike via builder "minswap".
+                  This authorizes the builder to collect up to 0.5% fee on your trades.
+                  Referral attribution: builder "minswap" will be recorded as your permanent referrer if you do not already have one.
+                  Referral code: MINDSWAP.
+                  By signing, you are entrusting your API wallet private key to this builder. You trust the builder to store and use this key responsibly.
+                  Wallet: 9WzDXwBhzVFT...
+                  Chain: solana
+                  API Key: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+                  Nonce: 019d4a2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b
+                  Timestamp: 2026-04-01T12:00:00Z
+
+                  Complete verify-signature within 5 minutes; after that the challenge expires.
+                referral_code: MINDSWAP
+          x-gitbook-description-html: <p>Signature challenge created</p>
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_chain:
+                  summary: Unsupported chain
+                  value:
+                    error: chain must be ethereum, solana, or cardano
+                invalid_pubkey:
+                  summary: Invalid public key
+                  value:
+                    error: 'invalid public key: must be 64 hex characters (Ed25519)'
+                invalid_fee:
+                  summary: Fee out of range
+                  value:
+                    error: fee_share_bps must be 0-100
+                inactive_builder:
+                  summary: Builder is deactivated
+                  value:
+                    error: builder is not active
+                referral_not_owned:
+                  summary: Referral does not belong to builder
+                  value:
+                    error: referral code does not belong to the builder
+          x-gitbook-description-html: <p>Validation error</p>
+        '404':
+          description: Builder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: builder code not found
+          x-gitbook-description-html: <p>Builder not found</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns a challenge message for the user to sign in their
+                      wallet (Phantom, Rabby, Nami). This is the first step of
+                      the builder connect flow.
+                    marks: []
+                key: uBz1zGdZ4wtD
+            key: 7tZRI4jdDzJ1
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      The dApp generates an Ed25519 keypair client-side, then
+                      sends the public key along with the user's wallet address,
+                      chain, builder code, fee approval, and an optional
+                      referral code.
+                    marks: []
+                key: eBgwAW9n3sJF
+            key: VhuhQS0EUey1
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Validation
+                    marks: []
+                key: oB7PemUxnlJT
+            key: 1f5EcTgtG5Ug
+          - object: block
+            type: list-unordered
+            isVoid: false
+            data: {}
+            nodes:
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: chain
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ' must be '
+                            marks: []
+                          - object: leaf
+                            text: ethereum
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ', '
+                            marks: []
+                          - object: leaf
+                            text: solana
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ', or '
+                            marks: []
+                          - object: leaf
+                            text: cardano
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: LCO3YuwHF7Py
+                    key: ByAVuRuSIgqz
+                key: vxYBsSUihTpE
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: public_key
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ' must be exactly 64 hex characters (Ed25519)'
+                            marks: []
+                        key: awsdk6Pd2e9F
+                    key: XAmh7f2klpoA
+                key: dNKiTeeeOwXF
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: code
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ' must reference an existing, active builder'
+                            marks: []
+                        key: NWIU0r4cFUdg
+                    key: vpTryuwwglIw
+                key: 0Wk02HiaF0z5
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: fee_share_bps
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ' must be between 0 and 100'
+                            marks: []
+                        key: skY0fUtL22OD
+                    key: t8XIBOSeCwiX
+                key: q4KJoEaV9tXV
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: referral_code
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: >-
+                              , when supplied, must belong to the builder-code
+                              owner
+                            marks: []
+                        key: builderReferralValidationLeaf
+                    key: builderReferralValidationParagraph
+                key: builderReferralValidationItem
+            key: 3psOCQDzGf13
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'The returned '
+                    marks: []
+                  - object: leaf
+                    text: nonce
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' expires after 5 minutes.'
+                    marks: []
+                key: CuHCNycKY7bI
+            key: 8N9OrJPhhJ7z
+        key: E7V3LJUWJr2O
+      x-gitbook-description-html: >-
+        <p>Returns a challenge message for the user to sign in their wallet
+        (Phantom, Rabby, Nami). This is the first step of the builder connect
+        flow.</p><p>The dApp generates an Ed25519 keypair client-side, then
+        sends the public key along with the user's wallet address, chain,
+        builder code, fee approval, and an optional referral code. When
+        supplied, <code>referral_code</code> must be owned by the account that
+        owns the builder code; omit it to connect without referral
+        attribution.</p><h3>Validation</h3><ul><li><code>chain</code> must be
+        <code>ethereum</code>, <code>solana</code>, or
+        <code>cardano</code></li><li><code>public_key</code> must be exactly 64
+        hex characters (Ed25519)</li><li><code>code</code> must reference an
+        existing, active builder</li><li><code>fee_share_bps</code> must be
+        between 0 and 100</li><li>Optional <code>referral_code</code> must
+        belong to the builder-code owner</li></ul><p>The returned
+        <code>nonce</code> expires after 5 minutes.</p>
+  /auth/builder/verify-signature:
+    post:
+      tags:
+        - Builder Connect
+      summary: Verify Signature
+      description: |
+        Verifies the user's wallet signature against the challenge message
+        and completes the builder connect flow.
+
+        On success, the backend:
+        1. Creates a new Strike account if the user doesn't have one
+        2. Applies the validated referral when one was requested and the user
+           does not already have a referrer
+        3. Approves the builder for this account (idempotent)
+        4. Revokes any existing API wallets for this account + builder code
+        5. Creates a new API wallet linked to the builder code
+
+        The nonce is single-use (`GETDEL` in Redis) — replaying the same
+        nonce returns a 400 error.
+
+        ### Signature verification
+
+        - **Ethereum:** EIP-191 personal sign
+        - **Solana:** Ed25519 signature over raw message bytes
+        - **Cardano:** CIP-30 data sign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifySignatureRequest'
+            example:
+              nonce: 019d4a2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b
+              wallet_signature: 0xabc123def456...
+      responses:
+        '200':
+          description: >-
+            Builder connected successfully. Returns the account ID, builder
+            code, approved fee cap, referral result, and the newly created API
+            wallet details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifySignatureResponse'
+              example:
+                account_id: 019d4a2b-1111-2222-3333-444455556666
+                nickname: ''
+                avatar_url: ''
+                builder_code: minswap
+                fee_share_bps: 50
+                api_wallet_id: 42
+                api_wallet_public_key: >-
+                  a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+                api_wallet_expired_at: '2026-04-01T12:00:00Z'
+                referral:
+                  status: accepted
+                  code: MINDSWAP
+          x-gitbook-description-html: >-
+            <p>Builder connected successfully. Returns the account ID, builder
+            code, approved fee cap, referral result, and the newly created API
+            wallet details.</p>
+        '400':
+          description: Validation or verification error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                expired_nonce:
+                  summary: Nonce expired or already used
+                  value:
+                    error: challenge not found or expired
+                mismatch:
+                  summary: Address/chain mismatch
+                  value:
+                    error: address or chain does not match challenge
+          x-gitbook-description-html: <p>Validation or verification error</p>
+        '401':
+          description: Signature verification failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: wallet signature verification failed
+          x-gitbook-description-html: <p>Signature verification failed</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Verifies the user's wallet signature against the challenge
+                      message and completes the builder connect flow.
+                    marks: []
+                key: dp6s3ZwxG9Hl
+            key: Sh2RaDTj03RW
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'On success, the backend:'
+                    marks: []
+                key: TRBX0xZgkZLl
+            key: lblLwNAiS0O5
+          - object: block
+            type: list-ordered
+            isVoid: false
+            data: {}
+            nodes:
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: >-
+                              Creates a new Strike account if the user doesn't
+                              have one
+                            marks: []
+                        key: H2mpCp5hu1aK
+                    key: lYUQOLsqk9Ox
+                key: Dta0PoJbLtwd
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: >-
+                              Applies the validated referral when one was
+                              requested and the user does not already have a
+                              referrer
+                            marks: []
+                        key: builderReferralLeaf
+                    key: builderReferralParagraph
+                key: builderReferralListItem
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Approves the builder for this account (idempotent)
+                            marks: []
+                        key: 1JaXwcTnsS9k
+                    key: ypRva7MwUFSV
+                key: mC54WKynln14
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: >-
+                              Revokes any existing API wallets for this account
+                              + builder code
+                            marks: []
+                        key: fEAAZFdZEOHh
+                    key: pZe2HMLXTqln
+                key: LDy4U8WqJxz8
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: >-
+                              Creates a new API wallet linked to the builder
+                              code
+                            marks: []
+                        key: mT48fWYzYXWZ
+                    key: qrm5Nu1IekNI
+                key: HJ9BY6lIwc8m
+            key: hJEYe8TR8yak
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: The nonce is single-use (
+                    marks: []
+                  - object: leaf
+                    text: GETDEL
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' in Redis) — replaying the same nonce returns a 400 error.'
+                    marks: []
+                key: WwHIoSVq1JdJ
+            key: 7sJn57FOzN8F
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Signature verification
+                    marks: []
+                key: w9PrFQGDYaEm
+            key: SL7oa5t78vU8
+          - object: block
+            type: list-unordered
+            isVoid: false
+            data: {}
+            nodes:
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: 'Ethereum:'
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ' EIP-191 personal sign'
+                            marks: []
+                        key: ubLh4AM55CJn
+                    key: 5LxqaNbNk87g
+                key: GY4QWZxhj96V
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: 'Solana:'
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ' Ed25519 signature over raw message bytes'
+                            marks: []
+                        key: 4BMDaIXsHLee
+                    key: iSewbHreiXue
+                key: tDu97N0KwCkr
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: 'Cardano:'
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ' CIP-30 data sign'
+                            marks: []
+                        key: HMouMcvTdDlh
+                    key: RYNRsrLxU4uL
+                key: 52Kus0Vp830W
+            key: aBX6RqM5YdTF
+        key: y8VDsikYIQsa
+      x-gitbook-description-html: >-
+        <p>Verifies the user's wallet signature against the challenge message
+        and completes the builder connect flow.</p><p>On success, the
+        backend:</p><ol><li>Creates a new Strike account if the user doesn't
+        have one</li><li>Applies the validated referral when one was requested
+        and the user does not already have a referrer</li><li>Approves the
+        builder for this account (idempotent)</li><li>Revokes any existing API
+        wallets for this account + builder code</li><li>Creates a new API wallet
+        linked to the builder code</li></ol><p>The nonce is single-use
+        (<code>GETDEL</code> in Redis)
+        — replaying the same nonce returns a 400 error.</p><h3>Signature
+        verification</h3><ul><li><strong>Ethereum:</strong> EIP-191 personal
+        sign</li><li><strong>Solana:</strong> Ed25519 signature over raw message
+        bytes</li><li><strong>Cardano:</strong> CIP-30 data sign</li></ul>
+  /v2/deposit/quote:
+    post:
+      tags:
+        - Deposit
+      summary: Get Deposit Quote
+      description: >
+        Returns a deposit quote with the exchange rate, USD value, and
+
+        Strike's vault deposit address. The quote is valid until
+        `expiration_at`.
+
+
+        The `deposit_address` is **Strike's vault address** — hardcoded in
+
+        backend config per chain, not caller-specified. This prevents
+
+        builders from redirecting deposits.
+
+
+        ### Authentication
+
+
+        Requires API wallet authentication via headers:
+
+        - `X-API-Wallet-Public-Key`
+
+        - `X-API-Wallet-Signature`
+
+        - `X-API-Wallet-Timestamp`
+
+        - `X-API-Wallet-Nonce`
+      security:
+        - ApiWalletAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositQuoteRequest'
+            example:
+              blockchain: solana
+              asset_symbol: USDC
+              asset_amount: '1000000000'
+      responses:
+        '200':
+          description: Deposit quote created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepositQuoteResponse'
+              example:
+                request_id: abc-123
+                quote:
+                  account_id: 019d4a2b-1111-2222-3333-444455556666
+                  blockchain: solana
+                  asset_symbol: USDC
+                  asset_amount: '1000000000'
+                  usd_value: '1000'
+                  exchange_rate: '1.00'
+                  confirmations: 1
+                  timestamp: 1711900000000
+                  expiration_at: 1711900900000
+                deposit_address: StrikeVau1t...
+                confirmations_required: 1
+                signature: ...
+          x-gitbook-description-html: <p>Deposit quote created</p>
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Invalid request</p>
+        '401':
+          description: API wallet authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>API wallet authentication failed</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns a deposit quote with the exchange rate, USD value,
+                      and Strike's vault deposit address. The quote is valid
+                      until 
+                    marks: []
+                  - object: leaf
+                    text: expiration_at
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: .
+                    marks: []
+                key: EkXbhbxgkTLz
+            key: eGWrXSVE1bxj
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'The '
+                    marks: []
+                  - object: leaf
+                    text: deposit_address
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' is '
+                    marks: []
+                  - object: leaf
+                    text: Strike's vault address
+                    marks:
+                      - object: mark
+                        type: bold
+                        data: {}
+                  - object: leaf
+                    text: ' — hardcoded in backend config per chain, not caller-specified. This prevents builders from redirecting deposits.'
+                    marks: []
+                key: nbHYBGt3j7C4
+            key: ZTmexRnWLlGb
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Authentication
+                    marks: []
+                key: IsrvUQw8LTbZ
+            key: ETnn1pL79tCO
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'Requires API wallet authentication via headers:'
+                    marks: []
+                key: kmGwH8FhGCGn
+            key: 8mpKsq9zijbp
+          - object: block
+            type: list-unordered
+            isVoid: false
+            data: {}
+            nodes:
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: X-API-Wallet-Public-Key
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: KxMJtNxXFVBF
+                    key: HhIpeDFroq7J
+                key: RzA06atfXffd
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: X-API-Wallet-Signature
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: IdLfaM6gbQwt
+                    key: YyfNXzwlIpQh
+                key: LDdNzEanfnu3
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: X-API-Wallet-Timestamp
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: z7LjjpE8fhWD
+                    key: 8XLJrqIsbbKO
+                key: ML6luFEU6YeM
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: X-API-Wallet-Nonce
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: BhxLrMKqeBpB
+                    key: CxCgE13FyV2z
+                key: 7R3FVasylkcv
+            key: YfVz1RaYxRZo
+        key: aHmM8NmzHRPG
+      x-gitbook-description-html: >-
+        <p>Returns a deposit quote with the exchange rate, USD value, and
+        Strike's vault deposit address. The quote is valid until
+        <code>expiration_at</code>.</p><p>The <code>deposit_address</code> is
+        <strong>Strike's vault address</strong> — hardcoded in backend config
+        per chain, not caller-specified. This prevents builders from redirecting
+        deposits.</p><h3>Authentication</h3><p>Requires API wallet
+        authentication via
+        headers:</p><ul><li><code>X-API-Wallet-Public-Key</code></li><li><code>X-API-Wallet-Signature</code></li><li><code>X-API-Wallet-Timestamp</code></li><li><code>X-API-Wallet-Nonce</code></li></ul>
+  /v2/deposit/build-tx:
+    post:
+      tags:
+        - Deposit
+      summary: Build Unsigned Transaction
+      description: >
+        Builds an unsigned transaction for the deposit. The transaction is
+
+        constructed entirely by the backend — destination address, amount,
+
+        and contract call data are all server-controlled.
+
+
+        The builder passes the unsigned transaction to the user's wallet
+
+        (Phantom, Rabby, Nami) for signing. The wallet displays the actual
+
+        destination and amount so the user can verify before signing.
+
+
+        ### Response format by chain
+
+
+        | Chain | `format` field | `unsigned_tx` type |
+
+        |-------|----------------|-------------------|
+
+        | Ethereum | `evm_tx_params` | JSON object (`from`, `to`, `data`,
+        `value`, `gas`) |
+
+        | Solana | `solana_base64` | Base64-encoded transaction |
+
+        | Cardano | `cardano_cbor` | CBOR hex-encoded transaction |
+
+
+        ### Authentication
+
+
+        Requires API wallet authentication via headers.
+      security:
+        - ApiWalletAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuildTxRequest'
+            example:
+              request_id: abc-123
+              user_address: 9WzDXwBhzVFT...
+      responses:
+        '200':
+          description: Unsigned transaction built
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/BuildTxResponseEVM'
+                  - $ref: '#/components/schemas/BuildTxResponseSolana'
+                  - $ref: '#/components/schemas/BuildTxResponseCardano'
+              examples:
+                evm:
+                  summary: Ethereum / EVM
+                  value:
+                    blockchain: ethereum
+                    unsigned_tx:
+                      from: 0xUserAddr...
+                      to: 0xStrikeDeposit...
+                      data: 0xa9059cbb...
+                      value: '0x0'
+                      gas: 0x...
+                    format: evm_tx_params
+                    approval_tx:
+                      from: 0xUserAddr...
+                      to: 0xTokenContract...
+                      data: 0x095ea7b3...
+                      value: '0x0'
+                      gas: 0x...
+                solana:
+                  summary: Solana
+                  value:
+                    blockchain: solana
+                    unsigned_tx: AQAAAA...
+                    format: solana_base64
+                    expires_at: 1711900060000
+                cardano:
+                  summary: Cardano
+                  value:
+                    blockchain: cardano
+                    unsigned_tx: 84a400...
+                    format: cardano_cbor
+                    expires_at: 1711900900000
+          x-gitbook-description-html: <p>Unsigned transaction built</p>
+        '400':
+          description: Invalid request or expired quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Invalid request or expired quote</p>
+        '401':
+          description: API wallet authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>API wallet authentication failed</p>
+        '403':
+          description: Access denied (account mismatch)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Access denied (account mismatch)</p>
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Quote not found</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Builds an unsigned transaction for the deposit. The
+                      transaction is constructed entirely by the backend —
+                      destination address, amount, and contract call data are
+                      all server-controlled.
+                    marks: []
+                key: DefeAfQDPzqN
+            key: 79TDFnG62GxV
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      The builder passes the unsigned transaction to the user's
+                      wallet (Phantom, Rabby, Nami) for signing. The wallet
+                      displays the actual destination and amount so the user can
+                      verify before signing.
+                    marks: []
+                key: ETFJxQpO6Slv
+            key: gOK86SlpLl9R
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Response format by chain
+                    marks: []
+                key: BepGNuFkwVhw
+            key: VXutZj0RNWx3
+          - object: block
+            type: table
+            isVoid: true
+            data:
+              records:
+                uvWaeFbb4s8f:
+                  orderIndex: '0|hzzztz:'
+                  values:
+                    WzAFLas6WIMB: N2UBUmFb77e2
+                    w9kQJPIQUNuo: pQaJGusmGXi3
+                    GvDnUDnWbfJB: rT37wweEE6iI
+                RW4AbCr6d49f:
+                  orderIndex: '0|i000d3:'
+                  values:
+                    WzAFLas6WIMB: 44gzrTmPij3U
+                    w9kQJPIQUNuo: khpUgZjTEg9I
+                    GvDnUDnWbfJB: cgma7EPEhRVk
+                wSUVqMRTHqCl:
+                  orderIndex: '0|i000t3:'
+                  values:
+                    WzAFLas6WIMB: KTjmLgV8eK0W
+                    w9kQJPIQUNuo: 7dlMI3RerBau
+                    GvDnUDnWbfJB: cqb6oL4y2kj1
+                3zpgC3eXPHR9:
+                  orderIndex: '0|i00113:'
+                  values:
+                    WzAFLas6WIMB: TTguHwjlA2UO
+                    w9kQJPIQUNuo: xplFoNZ2XZqw
+                    GvDnUDnWbfJB: JqaezaFuJ0Z5
+              definition:
+                WzAFLas6WIMB:
+                  id: WzAFLas6WIMB
+                  type: text
+                  title: ''
+                  textAlignment: left
+                w9kQJPIQUNuo:
+                  id: w9kQJPIQUNuo
+                  type: text
+                  title: ''
+                  textAlignment: left
+                GvDnUDnWbfJB:
+                  id: GvDnUDnWbfJB
+                  type: text
+                  title: ''
+                  textAlignment: left
+              view:
+                type: grid
+                columns:
+                  - WzAFLas6WIMB
+                  - w9kQJPIQUNuo
+                  - GvDnUDnWbfJB
+                useNewSizing: true
+                hideHeader: true
+                stickyHeader: false
+                columnWidths: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: ''
+                    marks: []
+                key: g4OsK4xG4yNa
+            key: 4ELndaSYxQbj
+            fragments:
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Chain
+                            marks: []
+                        key: cQsFRIiAJOFx
+                    key: WLJ0jIGe5Ezb
+                key: WtQOwjKY62gc
+                fragment: N2UBUmFb77e2
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: format
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ' field'
+                            marks: []
+                        key: NhEj2t7WTenW
+                    key: 8YzMEwEsmIDW
+                key: q0IA4DtJrOr1
+                fragment: pQaJGusmGXi3
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: unsigned_tx
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ' type'
+                            marks: []
+                        key: aRrq4pGTNml4
+                    key: jHPObcudbX4T
+                key: R0cf87Lg5cEC
+                fragment: rT37wweEE6iI
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Ethereum
+                            marks: []
+                        key: vE1PmgdBpT6h
+                    key: OtmABBNoCYNI
+                key: R7naRThf2YQv
+                fragment: 44gzrTmPij3U
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: evm_tx_params
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: jzki4JpZE0ZE
+                    key: p2tc22ZqzhrR
+                key: 31hBpB3eVWQb
+                fragment: khpUgZjTEg9I
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: JSON object (
+                            marks: []
+                          - object: leaf
+                            text: from
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ', '
+                            marks: []
+                          - object: leaf
+                            text: to
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ', '
+                            marks: []
+                          - object: leaf
+                            text: data
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ', '
+                            marks: []
+                          - object: leaf
+                            text: value
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ', '
+                            marks: []
+                          - object: leaf
+                            text: gas
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: )
+                            marks: []
+                        key: mVHGR11d56aW
+                    key: 0osUObDidT5r
+                key: a9ny11FAquIj
+                fragment: cgma7EPEhRVk
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Solana
+                            marks: []
+                        key: B9MXfbfHItjH
+                    key: mf9PGr7urXMr
+                key: S36yJma4Wys8
+                fragment: KTjmLgV8eK0W
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: solana_base64
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: P58nOTFtLu0H
+                    key: U8S5yRhnE2Uu
+                key: C0TLprjdnm3O
+                fragment: 7dlMI3RerBau
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Base64-encoded transaction
+                            marks: []
+                        key: Q85LKGod8fFE
+                    key: wGyrMXKCfODp
+                key: CKql53itVzuY
+                fragment: cqb6oL4y2kj1
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Cardano
+                            marks: []
+                        key: 7eGiZ4WvaG4m
+                    key: Ok0zMOmRzM0a
+                key: AlF1MzHjZRQi
+                fragment: TTguHwjlA2UO
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: cardano_cbor
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: PQle1s6LXrQs
+                    key: XwQoWroFUXNz
+                key: IDSSdANwesFb
+                fragment: xplFoNZ2XZqw
+                type: table-cell
+              - object: fragment
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: CBOR hex-encoded transaction
+                            marks: []
+                        key: qBMRerD4sd6c
+                    key: GesVGD7hJE9s
+                key: ICPrWa34VgLM
+                fragment: JqaezaFuJ0Z5
+                type: table-cell
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Authentication
+                    marks: []
+                key: b9vFHEJkMUsE
+            key: VEuqfLCNK1qd
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Requires API wallet authentication via headers.
+                    marks: []
+                key: kEKEP4wqNili
+            key: lY57o9EZB3Al
+        key: rhPxW038UnU4
+      x-gitbook-description-html: >-
+        <p>Builds an unsigned transaction for the deposit. The transaction is
+        constructed entirely by the backend — destination address, amount, and
+        contract call data are all server-controlled.</p><p>The builder passes
+        the unsigned transaction to the user's wallet (Phantom, Rabby, Nami) for
+        signing. The wallet displays the actual destination and amount so the
+        user can verify before signing.</p><h3>Response format by
+        chain</h3><table
+        data-header-hidden><thead><tr><th></th><th></th><th></th></tr></thead><tbody><tr><td>Chain</td><td><code>format</code>
+        field</td><td><code>unsigned_tx</code>
+        type</td></tr><tr><td>Ethereum</td><td><code>evm_tx_params</code></td><td>JSON
+        object (<code>from</code>, <code>to</code>, <code>data</code>,
+        <code>value</code>,
+        <code>gas</code>)</td></tr><tr><td>Solana</td><td><code>solana_base64</code></td><td>Base64-encoded
+        transaction</td></tr><tr><td>Cardano</td><td><code>cardano_cbor</code></td><td>CBOR
+        hex-encoded
+        transaction</td></tr></tbody></table><h3>Authentication</h3><p>Requires
+        API wallet authentication via headers.</p>
+  /v2/deposit:
+    post:
+      tags:
+        - Deposit
+      summary: Confirm Deposit
+      description: |
+        Confirms a deposit by submitting the on-chain transaction hash.
+
+        After the user signs the unsigned transaction in their wallet and
+        the dApp submits it to the blockchain, call this endpoint with the
+        resulting tx hash. The backend monitors the blockchain for the
+        specified transaction and credits the account after sufficient
+        confirmations.
+
+        ### Authentication
+
+        Requires API wallet authentication via headers.
+      security:
+        - ApiWalletAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositConfirmRequest'
+            example:
+              request_id: abc-123
+              tx_hash: 5abc...
+      responses:
+        '200':
+          description: Deposit confirmation accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepositConfirmResponse'
+              example:
+                request_id: abc-123
+                status: pending
+                tx_hash: 5abc...
+                message: Deposit submission confirmed, awaiting blockchain confirmation
+          x-gitbook-description-html: <p>Deposit confirmation accepted</p>
+        '400':
+          description: Invalid request, expired quote, or invalid tx_hash format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Invalid request, expired quote, or invalid tx_hash format</p>
+        '401':
+          description: API wallet authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>API wallet authentication failed</p>
+        '403':
+          description: Access denied (account mismatch)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Access denied (account mismatch)</p>
+        '404':
+          description: Deposit quote not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Deposit quote not found or expired</p>
+        '409':
+          description: Deposit already submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Deposit already submitted</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Confirms a deposit by submitting the on-chain transaction
+                      hash.
+                    marks: []
+                key: TwZ7fmDExkQj
+            key: Nbh3eQKx4UWT
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      After the user signs the unsigned transaction in their
+                      wallet and the dApp submits it to the blockchain, call
+                      this endpoint with the resulting tx hash. The backend
+                      monitors the blockchain for the specified transaction and
+                      credits the account after sufficient confirmations.
+                    marks: []
+                key: aReIHckZ4uqR
+            key: 63kJUccrxC4j
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Authentication
+                    marks: []
+                key: Ep1P7RvKHpDD
+            key: lAWHDn1K4tfv
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Requires API wallet authentication via headers.
+                    marks: []
+                key: uy5gSUy1StkI
+            key: tOYlLTqm3tpc
+        key: qIP30hVqP3zl
+      x-gitbook-description-html: >-
+        <p>Confirms a deposit by submitting the on-chain transaction
+        hash.</p><p>After the user signs the unsigned transaction in their
+        wallet and the dApp submits it to the blockchain, call this endpoint
+        with the resulting tx hash. The backend monitors the blockchain for the
+        specified transaction and credits the account after sufficient
+        confirmations.</p><h3>Authentication</h3><p>Requires API wallet
+        authentication via headers.</p>
+  /v2/withdraw/quote:
+    post:
+      tags:
+        - Withdraw
+      summary: Get Withdraw Quote
+      description: |
+        Returns a withdrawal quote including the fee and a message for the
+        user to sign in their wallet. Use this same endpoint for Ethereum,
+        Solana, and Cardano; there are no Cardano-only public withdrawal quote
+        endpoints.
+
+        In the Builder Codes flow, call this endpoint with the API wallet
+        credentials created by `/auth/builder/verify-signature`. It works the
+        same as the standard API wallet flow: the API wallet authenticates the
+        builder integration for the connected user account, but the returned
+        `message_to_sign` must still be signed by the user's blockchain wallet.
+
+        **Important:** This endpoint does NOT accept a `recipient_address`.
+        The backend automatically uses the account's registered wallet
+        address (from the connect flow). This prevents API wallet holders
+        from redirecting withdrawals.
+
+        The `recipient_address`, `usd_value`, and `fee` are locked into a
+        server-signed quote stored in Redis. The quote is single-use.
+
+        ### Message format by blockchain
+
+        - **Ethereum:** `message_to_sign` is human-readable UTF-8 text for the
+          EVM wallet to sign.
+        - **Solana:** `message_to_sign` is human-readable UTF-8 text for the
+          Solana wallet to sign as raw message bytes.
+        - **Cardano:** `message_to_sign` is hex-encoded UTF-8 text. Pass the
+          returned hex string as the CIP-30 `signData` payload. For UI display,
+          you may hex-decode it, but the signature must cover the returned
+          payload.
+
+        ### Cardano funding transaction
+
+        Cardano quote responses may include `tx_cbor` and `validator_address`.
+        When `tx_cbor` is present, the wallet must sign that CBOR transaction
+        and send the resulting `signed_tx_cbor` in the confirm step.
+
+        ### Authentication
+
+        Requires API wallet authentication via headers.
+      security:
+        - ApiWalletAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WithdrawQuoteRequest'
+            example:
+              usd_value: '500'
+              blockchain: solana
+              asset: USDC
+      responses:
+        '200':
+          description: Withdraw quote created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WithdrawQuoteResponse'
+              examples:
+                standard:
+                  summary: Ethereum / Solana
+                  value:
+                    withdraw_id: def-456
+                    fee: '0.50'
+                    message_to_sign: >-
+                      Authorize withdrawal from Strike Perpetuals.
+
+                      Wallet: 9WzDXw... Chain: solana Amount: 500 USD Fee: 0.50
+                      USD Timestamp: 2026-04-01 12:00:00 UTC Withdraw ID:
+                      def-456
+                cardano:
+                  summary: Cardano
+                  value:
+                    withdraw_id: def-cardano-456
+                    fee: '1'
+                    message_to_sign: >-
+                      417574686f72697a65207769746864726177616c2066726f6d20537472696b652050657270657475616c732e0a0a57616c6c65743a20616464725f74657374312e2e2e
+                    tx_cbor: 84a40081825820...
+                    validator_address: addr_test1validator...
+          x-gitbook-description-html: <p>Withdraw quote created</p>
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Invalid request</p>
+        '401':
+          description: API wallet authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>API wallet authentication failed</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Returns a withdrawal quote including the fee and a message
+                      for the user to sign in their wallet.
+                    marks: []
+                key: SUMmwnv7Zeti
+            key: 6J6wg87EvUNK
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'Important:'
+                    marks:
+                      - object: mark
+                        type: bold
+                        data: {}
+                  - object: leaf
+                    text: ' This endpoint does NOT accept a '
+                    marks: []
+                  - object: leaf
+                    text: recipient_address
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: >-
+                      . The backend automatically uses the account's registered
+                      wallet address (from the connect flow). This prevents API
+                      wallet holders from redirecting withdrawals.
+                    marks: []
+                key: pK9ZKRY6EeEU
+            key: Pt1eOvHaYJy9
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'The '
+                    marks: []
+                  - object: leaf
+                    text: recipient_address
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ', '
+                    marks: []
+                  - object: leaf
+                    text: usd_value
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ', and '
+                    marks: []
+                  - object: leaf
+                    text: fee
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' are locked into a server-signed quote stored in Redis. The quote is single-use.'
+                    marks: []
+                key: ofVHdlUGavB6
+            key: V5xCiRdetIs3
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Authentication
+                    marks: []
+                key: CQHIj3nvRDI4
+            key: H7P7BBx8ry7k
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Requires API wallet authentication via headers.
+                    marks: []
+                key: vqbshlvFqLc8
+            key: i3lXztSwF3Cg
+        key: dPtyzVgCvn1f
+      x-gitbook-description-html: >-
+        <p>Returns a withdrawal quote including the fee and a message for the
+        user to sign in their wallet. Use this same endpoint for Ethereum,
+        Solana, and Cardano; there are no Cardano-only public withdrawal quote
+        endpoints.</p><p>In the Builder Codes flow, call this endpoint with the
+        API wallet credentials created by
+        <code>/auth/builder/verify-signature</code>. It works the same as the
+        standard API wallet flow: the API wallet authenticates the builder
+        integration for the connected user account, but the returned
+        <code>message_to_sign</code> must still be signed by the user's
+        blockchain wallet.</p><p><strong>Important:</strong> This endpoint does
+        NOT accept a <code>recipient_address</code>. The backend automatically
+        uses the account's registered wallet address (from the connect flow).
+        This prevents API wallet holders from redirecting
+        withdrawals.</p><p>The <code>recipient_address</code>,
+        <code>usd_value</code>, and <code>fee</code> are locked into a
+        server-signed quote stored in Redis. The quote is
+        single-use.</p><h3>Message format by blockchain</h3><ul><li><strong>Ethereum:</strong>
+        <code>message_to_sign</code> is human-readable UTF-8 text for the EVM
+        wallet to sign.</li><li><strong>Solana:</strong>
+        <code>message_to_sign</code> is human-readable UTF-8 text for the Solana
+        wallet to sign as raw message bytes.</li><li><strong>Cardano:</strong>
+        <code>message_to_sign</code> is hex-encoded UTF-8 text. Pass the
+        returned hex string as the CIP-30 <code>signData</code> payload. For UI
+        display, you may hex-decode it, but the signature must cover the
+        returned payload.</li></ul><h3>Cardano funding transaction</h3><p>Cardano
+        quote responses may include <code>tx_cbor</code> and
+        <code>validator_address</code>. When <code>tx_cbor</code> is present,
+        the wallet must sign that CBOR transaction and send the resulting
+        <code>signed_tx_cbor</code> in the confirm step.</p><h3>Authentication</h3><p>Requires
+        API wallet authentication via headers.</p>
+  /v2/withdraw:
+    post:
+      tags:
+        - Withdraw
+      summary: Confirm Withdrawal
+      description: >
+        Confirms a withdrawal by submitting the user's wallet signature
+
+        over the `message_to_sign` from the quote step.
+
+
+        In the Builder Codes flow, use the same API wallet credentials created
+
+        by `/auth/builder/verify-signature`. The API wallet authorizes the
+
+        builder integration request, and `wallet_signature` proves the connected
+
+        user approved this specific withdrawal quote.
+
+
+        The backend:
+
+        1. Retrieves the quote from Redis (including the locked
+        `recipient_address`)
+
+        2. Verifies the wallet signature against the `message_to_sign`
+
+        3. Uses `recipient_address` from the **stored quote**, not from the
+        request
+
+        4. Publishes the withdraw command to the engine
+
+
+        The quote has a server-side Ed25519 signature (`quote_signature`)
+
+        that the engine verifies — tampering with Redis data would break
+
+        the signature. Quotes are single-use via `HSetNX` on
+
+        `status=pending`.
+
+
+        If the quote response included `tx_cbor`, the confirmation request must
+
+        also include `signed_tx_cbor`. This is currently used by Cardano
+
+        withdrawals that require the user to fund the validator min-UTxO before
+
+        the engine withdrawal command is published.
+
+
+        ### Authentication
+
+
+        Requires API wallet authentication via headers.
+      security:
+        - ApiWalletAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WithdrawConfirmRequest'
+            examples:
+              standard:
+                summary: Ethereum / Solana
+                value:
+                  withdraw_id: def-456
+                  wallet_signature: 0xdef...
+              cardano:
+                summary: Cardano with funding transaction
+                value:
+                  withdraw_id: def-cardano-456
+                  wallet_signature: coseSign1Hex:coseKeyHex
+                  signed_tx_cbor: 84a40081825820...
+      responses:
+        '201':
+          description: Withdrawal accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WithdrawConfirmResponse'
+              example:
+                request_id: def-456
+                status: pending
+                sequence_id: 123
+                message_id: msg-789
+          x-gitbook-description-html: <p>Withdrawal accepted</p>
+        '400':
+          description: Invalid request, expired quote, or signature mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Invalid request, expired quote, or signature mismatch</p>
+        '401':
+          description: API wallet authentication or wallet signature failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>API wallet authentication or wallet signature failed</p>
+      x-gitbook-description-document:
+        object: document
+        data:
+          schemaVersion: 9
+        nodes:
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: >-
+                      Confirms a withdrawal by submitting the user's wallet
+                      signature over the 
+                    marks: []
+                  - object: leaf
+                    text: message_to_sign
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' from the quote step.'
+                    marks: []
+                key: AGz9PEOhpqfd
+            key: LDCquqfnjkpT
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: 'The backend:'
+                    marks: []
+                key: raq2ME7oWQf6
+            key: mOnTqDwMIBKk
+          - object: block
+            type: list-ordered
+            isVoid: false
+            data: {}
+            nodes:
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: >-
+                              Retrieves the quote from Redis (including the
+                              locked 
+                            marks: []
+                          - object: leaf
+                            text: recipient_address
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: )
+                            marks: []
+                        key: iWYiHxo21A8Q
+                    key: ZluB8RDnVn3Q
+                key: eU4fJWvWoh9B
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: 'Verifies the wallet signature against the '
+                            marks: []
+                          - object: leaf
+                            text: message_to_sign
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                        key: wKWiZHXbHL54
+                    key: 7aF9tqR5Ct7v
+                key: 2TKOKNK6RIEG
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: 'Uses '
+                            marks: []
+                          - object: leaf
+                            text: recipient_address
+                            marks:
+                              - object: mark
+                                type: code
+                                data: {}
+                          - object: leaf
+                            text: ' from the '
+                            marks: []
+                          - object: leaf
+                            text: stored quote
+                            marks:
+                              - object: mark
+                                type: bold
+                                data: {}
+                          - object: leaf
+                            text: ', not from the request'
+                            marks: []
+                        key: z49d2wFf4BvL
+                    key: LpzsDrXMZ5oN
+                key: 6myG68qsKVm7
+              - object: block
+                type: list-item
+                isVoid: false
+                data: {}
+                nodes:
+                  - object: block
+                    type: paragraph
+                    isVoid: false
+                    data: {}
+                    nodes:
+                      - object: text
+                        leaves:
+                          - object: leaf
+                            text: Publishes the withdraw command to the engine
+                            marks: []
+                        key: kBeWLjnxYhtU
+                    key: iRQgaw0WPRoa
+                key: GWnnCsps4HZd
+            key: 96d3NIQo7uao
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: The quote has a server-side Ed25519 signature (
+                    marks: []
+                  - object: leaf
+                    text: quote_signature
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: >-
+                      ) that the engine verifies — tampering with Redis data
+                      would break the signature. Quotes are single-use via 
+                    marks: []
+                  - object: leaf
+                    text: HSetNX
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: ' on '
+                    marks: []
+                  - object: leaf
+                    text: status=pending
+                    marks:
+                      - object: mark
+                        type: code
+                        data: {}
+                  - object: leaf
+                    text: .
+                    marks: []
+                key: s4Q50VaUpwXX
+            key: LdFsvooJS9NI
+          - object: block
+            type: heading-3
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Authentication
+                    marks: []
+                key: qp6bYtzLXjeE
+            key: 7o38B1IWejqn
+          - object: block
+            type: paragraph
+            isVoid: false
+            data: {}
+            nodes:
+              - object: text
+                leaves:
+                  - object: leaf
+                    text: Requires API wallet authentication via headers.
+                    marks: []
+                key: 7iQW2HKuUtQO
+            key: vCcOSBfEio9I
+        key: 1t5O6P7GX5Cx
+      x-gitbook-description-html: >-
+        <p>Confirms a withdrawal by submitting the user's wallet signature over
+        the <code>message_to_sign</code> from the quote step.</p><p>In the
+        Builder Codes flow, use the same API wallet credentials created by
+        <code>/auth/builder/verify-signature</code>. The API wallet authorizes
+        the builder integration request, and <code>wallet_signature</code>
+        proves the connected user approved this specific withdrawal
+        quote.</p><p>The backend:</p><ol><li>Retrieves the quote from Redis (including the locked
+        <code>recipient_address</code>)</li><li>Verifies the wallet signature
+        against the <code>message_to_sign</code></li><li>Uses
+        <code>recipient_address</code> from the <strong>stored quote</strong>,
+        not from the request</li><li>Publishes the withdraw command to the
+        engine</li></ol><p>The quote has a server-side Ed25519 signature
+        (<code>quote_signature</code>) that the engine verifies — tampering with
+        Redis data would break the signature. Quotes are single-use via
+        <code>HSetNX</code> on
+        <code>status=pending</code>.</p><p>If the quote response included
+        <code>tx_cbor</code>, the confirmation request must also include
+        <code>signed_tx_cbor</code>. This is currently used by Cardano
+        withdrawals that require the user to fund the validator min-UTxO before
+        the engine withdrawal command is published.</p><h3>Authentication</h3><p>Requires API
+        wallet authentication via headers.</p>
+  /v2/withdraw/limits:
+    get:
+      tags:
+        - Withdraw
+      summary: Get Withdrawal Limits
+      description: |
+        Returns current withdrawal rate-limit buckets and queue state for a
+        blockchain + asset pair. Use this shared endpoint for supported chains;
+        there is no Cardano-only limits endpoint.
+
+        `chain` is the documented query parameter. The API also accepts
+        `blockchain` as an alias.
+
+        In the Builder Codes flow, this endpoint is called with the builder
+        API wallet credentials and returns limits for the connected user
+        account behind that API wallet.
+
+        ### Why use this endpoint
+
+        Use withdraw limits before creating a quote when you want to:
+
+        - Show the user how much of an asset can be withdrawn right now.
+        - Disable or warn on an amount that would exceed the per-asset or global
+          1h/24h limits.
+        - Explain why a quote may fail with `withdrawal rate limit reached` or
+          `withdrawal amount exceeds maximum single-withdrawal limit`.
+        - Show whether withdrawals are already queued and estimate how long the
+          queue may take to drain.
+        - Warn that a large withdrawal may enter an additional delayed queue.
+
+        Example: before asking the user to sign a 1,200 ADA withdrawal, call
+        `GET /v2/withdraw/limits?chain=cardano&asset=ADA`. If `remaining` is
+        `975` or the amount is above `large_withdrawal.threshold`, the UI can
+        lower the suggested amount, split the withdrawal, or show an expected
+        delay before the wallet signature step.
+
+        ### Authentication
+
+        Requires API wallet authentication via headers.
+      security:
+        - ApiWalletAuth: []
+      parameters:
+        - name: chain
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - ethereum
+              - solana
+              - cardano
+          description: Blockchain to inspect. `blockchain` is accepted as an alias.
+        - name: asset
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Asset symbol, e.g. `USDC`, `SOL`, or `ADA`.
+      responses:
+        '200':
+          description: Withdrawal limits returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WithdrawLimitsResponse'
+              example:
+                asset: ADA
+                blockchain: cardano
+                as_of: 1711972800
+                buckets:
+                  per_asset_1h:
+                    window_seconds: 3600
+                    limit: '1000000'
+                    used: '25000'
+                    remaining: '975000'
+                    current_used: '25000'
+                    previous_used: '0'
+                    window_start: 1711972800
+                  per_asset_24h:
+                    window_seconds: 86400
+                    limit: '5000000'
+                    used: '25000'
+                    remaining: '4975000'
+                    current_used: '25000'
+                    previous_used: '0'
+                    window_start: 1711929600
+                  global_1h:
+                    window_seconds: 3600
+                    limit: '2000000'
+                    used: '25000'
+                    remaining: '1975000'
+                    current_used: '25000'
+                    previous_used: '0'
+                    window_start: 1711972800
+                  global_24h:
+                    window_seconds: 86400
+                    limit: '10000000'
+                    used: '25000'
+                    remaining: '9975000'
+                    current_used: '25000'
+                    previous_used: '0'
+                    window_start: 1711929600
+                queue:
+                  pending_count: 1
+                  pending_asset_count: 1
+                  pending_total_amount: '25000'
+                  pending_asset_total_amount: '25000'
+                  large_withdrawals_pending: 0
+                  estimated_drain_seconds: 60
+                  retry_slot_seconds: 60
+                large_withdrawal:
+                  threshold: '1000000'
+                  queue_delay_seconds: 86400
+                  estimated_total_delay_seconds: 93600
+                  pending:
+                    count: 0
+                    asset_count: 0
+                    asset_total_amount: '0'
+                    global_total_amount: '0'
+                    executable_count: 0
+                    executable_asset_count: 0
+                    executable_asset_total_amount: '0'
+                    executable_global_total_amount: '0'
+          x-gitbook-description-html: <p>Withdrawal limits returned</p>
+        '400':
+          description: Invalid request or unsupported asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Invalid request or unsupported asset</p>
+        '401':
+          description: API wallet authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>API wallet authentication failed</p>
+        '501':
+          description: Withdrawal limits are not implemented for this blockchain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Withdrawal limits are not implemented for this blockchain</p>
+        '503':
+          description: Withdrawal service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Withdrawal service unavailable</p>
+      x-gitbook-description-html: >-
+        <p>Returns current withdrawal rate-limit buckets and queue state for a
+        blockchain + asset pair. Use this shared endpoint for supported chains;
+        there is no Cardano-only limits endpoint.</p><p><code>chain</code> is
+        the documented query parameter. The API also accepts
+        <code>blockchain</code> as an alias.</p><p>In the Builder Codes flow,
+        this endpoint is called with the builder API wallet credentials and
+        returns limits for the connected user account behind that API
+        wallet.</p><h3>Why use this endpoint</h3><p>Use
+        withdraw limits before creating a quote when you want to:</p><ul><li>Show
+        the user how much of an asset can be withdrawn right now.</li><li>Disable
+        or warn on an amount that would exceed the per-asset or global 1h/24h
+        limits.</li><li>Explain why a quote may fail with
+        <code>withdrawal rate limit reached</code> or
+        <code>withdrawal amount exceeds maximum single-withdrawal
+        limit</code>.</li><li>Show whether withdrawals are already queued and
+        estimate how long the queue may take to drain.</li><li>Warn that a large
+        withdrawal may enter an additional delayed queue.</li></ul><p>Example:
+        before asking the user to sign a 1,200 ADA withdrawal, call
+        <code>GET /v2/withdraw/limits?chain=cardano&amp;asset=ADA</code>. If
+        <code>remaining</code> is <code>975</code> or the amount is above
+        <code>large_withdrawal.threshold</code>, the UI can lower the suggested
+        amount, split the withdrawal, or show an expected delay before the wallet
+        signature step.</p><h3>Authentication</h3><p>Requires
+        API wallet authentication via headers.</p>
+  /v2/withdraw/queue-position:
+    get:
+      tags:
+        - Withdraw
+      summary: Get Withdrawal Queue Position
+      description: |
+        Returns the current retry/settlement queue position for a withdrawal.
+        Use this shared endpoint for supported chains; there is no Cardano-only
+        queue-position endpoint.
+
+        `withdrawal_id` and `chain` are the documented query parameters. The
+        API also accepts `withdraw_id` and `blockchain` as aliases.
+
+        In the Builder Codes flow, this endpoint is called with the builder
+        API wallet credentials and can only inspect withdrawals for the
+        connected user account behind that API wallet.
+
+        ### Why use this endpoint
+
+        Use queue position after a withdrawal has been submitted and you have a
+        `withdrawal_id`. This endpoint is for status and ETA messaging, not for
+        creating or retrying a withdrawal.
+
+        Common examples:
+
+        - Show a user why a confirmed withdrawal is still pending instead of
+          asking them to submit it again.
+        - Display `wait_seconds`, `estimated_at`, or `retry_at` when a
+          withdrawal is waiting behind rate limits or a chain-specific queue.
+        - Distinguish a withdrawal that is not queued (`queued: false`,
+          `status: not_deferred`) from one that is delayed.
+        - Provide support/debug context with `retry_reason`,
+          `transaction_status`, or `queue_tx_hash` when present.
+
+        Example: after `POST /v2/withdraw` returns `request_id:
+        def-cardano-456`, call
+        `GET /v2/withdraw/queue-position?chain=cardano&withdrawal_id=def-cardano-456`.
+        If the response has `queued: true` and `wait_seconds: 300`, show that
+        the withdrawal is queued and expected to retry in about five minutes.
+
+        ### Authentication
+
+        Requires API wallet authentication via headers.
+      security:
+        - ApiWalletAuth: []
+      parameters:
+        - name: withdrawal_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Withdrawal ID returned by the quote/confirm flow.
+        - name: chain
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - ethereum
+              - cardano
+          description: Blockchain to inspect. `blockchain` is accepted as an alias.
+      responses:
+        '200':
+          description: Queue position returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WithdrawQueuePositionResponse'
+              examples:
+                queued:
+                  summary: Queued withdrawal
+                  value:
+                    withdrawal_id: def-cardano-456
+                    queued: true
+                    status: queued
+                    queue_status: rate_limited
+                    transaction_status: pending
+                    blockchain: cardano
+                    wait_seconds: 300
+                    estimated_at: 1711973100
+                    retry_at: 1711973100
+                    retry_reason: rate_limit
+                not_queued:
+                  summary: Not queued
+                  value:
+                    withdrawal_id: def-456
+                    queued: false
+                    status: not_deferred
+                    blockchain: ethereum
+                    wait_seconds: 0
+          x-gitbook-description-html: <p>Queue position returned</p>
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Invalid request</p>
+        '401':
+          description: API wallet authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>API wallet authentication failed</p>
+        '404':
+          description: Withdrawal not found or not owned by the authenticated account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Withdrawal not found or not owned by the authenticated account</p>
+        '501':
+          description: Queue position is not implemented for this blockchain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Queue position is not implemented for this blockchain</p>
+        '503':
+          description: Withdrawal service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          x-gitbook-description-html: <p>Withdrawal service unavailable</p>
+      x-gitbook-description-html: >-
+        <p>Returns the current retry/settlement queue position for a withdrawal.
+        Use this shared endpoint for supported chains; there is no Cardano-only
+        queue-position endpoint.</p><p><code>withdrawal_id</code> and
+        <code>chain</code> are the documented query parameters. The API also
+        accepts <code>withdraw_id</code> and <code>blockchain</code> as
+        aliases.</p><p>In the Builder Codes flow, this endpoint is called with
+        the builder API wallet credentials and can only inspect withdrawals for
+        the connected user account behind that API wallet.</p><h3>Why use this
+        endpoint</h3><p>Use queue position after a
+        withdrawal has been submitted and you have a <code>withdrawal_id</code>.
+        This endpoint is for status and ETA messaging, not for creating or
+        retrying a withdrawal.</p><p>Common examples:</p><ul><li>Show a user why
+        a confirmed withdrawal is still pending instead of asking them to submit
+        it again.</li><li>Display <code>wait_seconds</code>,
+        <code>estimated_at</code>, or <code>retry_at</code> when a withdrawal is
+        waiting behind rate limits or a chain-specific queue.</li><li>Distinguish
+        a withdrawal that is not queued (<code>queued: false</code>,
+        <code>status: not_deferred</code>) from one that is
+        delayed.</li><li>Provide support/debug context with
+        <code>retry_reason</code>, <code>transaction_status</code>, or
+        <code>queue_tx_hash</code> when present.</li></ul><p>Example: after
+        <code>POST /v2/withdraw</code> returns <code>request_id:
+        def-cardano-456</code>, call
+        <code>GET /v2/withdraw/queue-position?chain=cardano&amp;withdrawal_id=def-cardano-456</code>.
+        If the response has <code>queued: true</code> and
+        <code>wait_seconds: 300</code>, show that the withdrawal is queued and
+        expected to retry in about five minutes.</p><h3>Authentication</h3><p>Requires API wallet authentication
+        via headers.</p>
+components:
+  securitySchemes:
+    ApiWalletAuth:
+      type: apiKey
+      in: header
+      name: X-API-Wallet-Public-Key
+      description: >
+        API wallet authentication uses four headers together:
+        `X-API-Wallet-Public-Key`, `X-API-Wallet-Signature`,
+        `X-API-Wallet-Timestamp`, and `X-API-Wallet-Nonce`. The signature
+        message format is `{METHOD}:{PATH}:{TIMESTAMP}:{NONCE}:{BODY_HASH}`
+        where BODY_HASH is the SHA-256 hex digest of the JSON body (or empty
+        string for GET). The message is signed with the Ed25519 private key
+        corresponding to the public key.
+      x-gitbook-description-html: >-
+        <p>API wallet authentication uses four headers together:
+        <code>X-API-Wallet-Public-Key</code>,
+        <code>X-API-Wallet-Signature</code>,
+        <code>X-API-Wallet-Timestamp</code>, and
+        <code>X-API-Wallet-Nonce</code>. The signature message format is
+        <code>{METHOD}:{PATH}:{TIMESTAMP}:{NONCE}:{BODY_HASH}</code> where
+        BODY_HASH is the SHA-256 hex digest of the JSON body (or empty string
+        for GET). The message is signed with the Ed25519 private key
+        corresponding to the public key.</p>
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+          x-gitbook-description-html: <p>Human-readable error message.</p>
+    RequestSignatureRequest:
+      type: object
+      required:
+        - address
+        - chain
+        - code
+        - fee_share_bps
+        - public_key
+      properties:
+        address:
+          type: string
+          description: User's wallet address.
+          x-gitbook-description-html: <p>User's wallet address.</p>
+        chain:
+          type: string
+          enum:
+            - ethereum
+            - solana
+            - cardano
+          description: >-
+            Blockchain the user's wallet is on. Must be `ethereum`, `solana`, or
+            `cardano`.
+          x-gitbook-description-html: >-
+            <p>Blockchain the user's wallet is on. Must be
+            <code>ethereum</code>, <code>solana</code>, or
+            <code>cardano</code>.</p>
+        code:
+          type: string
+          description: Builder code to connect to. Must exist and be active.
+          x-gitbook-description-html: <p>Builder code to connect to. Must exist and be active.</p>
+        fee_share_bps:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: >-
+            Maximum fee rate (in basis points) the user approves the builder to
+            charge on trades. Required. Range 0-100 (0% to 1%).
+          x-gitbook-description-html: >-
+            <p>Maximum fee rate (in basis points) the user approves the builder
+            to charge on trades. Required. Range 0-100 (0% to 1%).</p>
+        public_key:
+          type: string
+          pattern: ^[0-9a-fA-F]{64}$
+          description: >-
+            Ed25519 public key for the API wallet, encoded as 64 hex characters.
+            The dApp generates this keypair client-side.
+          x-gitbook-description-html: >-
+            <p>Ed25519 public key for the API wallet, encoded as 64 hex
+            characters. The dApp generates this keypair client-side.</p>
+        referral_code:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: >-
+            Optional referral attribution. When supplied, this must match the
+            canonical or customized referral code owned by the account that
+            owns `code`. Omit it to connect without accepting a referral.
+          x-gitbook-description-html: >-
+            <p>Optional referral attribution. When supplied, this must match
+            the canonical or customized referral code owned by the account
+            that owns <code>code</code>. Omit it to connect without accepting a
+            referral.</p>
+    RequestSignatureResponse:
+      type: object
+      properties:
+        nonce:
+          type: string
+          format: uuid
+          description: >-
+            Single-use nonce identifying this challenge. Expires after 5
+            minutes. Pass this to the verify-signature endpoint.
+          x-gitbook-description-html: >-
+            <p>Single-use nonce identifying this challenge. Expires after 5
+            minutes. Pass this to the verify-signature endpoint.</p>
+        message_to_sign:
+          type: string
+          description: >-
+            Canonical human-readable consent statement to sign exactly as
+            returned. It binds the builder code, approved fee, optional
+            referral attribution, wallet, chain, API public key, nonce, and
+            timestamp.
+          x-gitbook-description-html: >-
+            <p>Canonical human-readable consent statement to sign exactly as
+            returned. It binds the builder code, approved fee, optional
+            referral attribution, wallet, chain, API public key, nonce, and
+            timestamp.</p>
+        message:
+          type: string
+          description: >-
+            Display-oriented alias of `message_to_sign`. The wallet signature
+            must cover `message_to_sign` exactly.
+          x-gitbook-description-html: >-
+            <p>Display-oriented alias of <code>message_to_sign</code>. The
+            wallet signature must cover <code>message_to_sign</code>
+            exactly.</p>
+        referral_code:
+          type: string
+          description: >-
+            The validated referral code echoed when referral attribution was
+            requested. Omitted when the request did not include
+            `referral_code`.
+          x-gitbook-description-html: >-
+            <p>The validated referral code echoed when referral attribution was
+            requested. Omitted when the request did not include
+            <code>referral_code</code>.</p>
+    VerifySignatureRequest:
+      type: object
+      required:
+        - nonce
+        - wallet_signature
+      properties:
+        nonce:
+          type: string
+          format: uuid
+          description: Nonce from the request-signature response.
+          x-gitbook-description-html: <p>Nonce from the request-signature response.</p>
+        wallet_signature:
+          type: string
+          description: >-
+            The user's wallet signature over the `message_to_sign`. Format
+            depends on chain: hex-encoded for Ethereum, base58-encoded for
+            Solana, CIP-30 COSE format (`{coseSign1Hex}:{coseKeyHex}`) for
+            Cardano.
+          x-gitbook-description-html: >-
+            <p>The user's wallet signature over the
+            <code>message_to_sign</code>. Format depends on chain: hex-encoded
+            for Ethereum, base58-encoded for Solana, CIP-30 COSE format
+            (<code>{coseSign1Hex}:{coseKeyHex}</code>) for Cardano.</p>
+    VerifySignatureResponse:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: >-
+            The user's Strike account ID. Created automatically if this is a new
+            user.
+          x-gitbook-description-html: >-
+            <p>The user's Strike account ID. Created automatically if this is a
+            new user.</p>
+        nickname:
+          type: string
+          description: The user's profile nickname, if set.
+          x-gitbook-description-html: <p>The user's profile nickname, if set.</p>
+        avatar_url:
+          type: string
+          description: The user's profile avatar URL, if set.
+          x-gitbook-description-html: <p>The user's profile avatar URL, if set.</p>
+        builder_code:
+          type: string
+          description: The builder code that was approved.
+          x-gitbook-description-html: <p>The builder code that was approved.</p>
+        fee_share_bps:
+          type: integer
+          description: The maximum fee rate the user approved (basis points).
+          x-gitbook-description-html: <p>The maximum fee rate the user approved (basis points).</p>
+        api_wallet_id:
+          type: integer
+          description: >-
+            ID of the newly created API wallet. Any prior API wallets for this
+            account + builder code are revoked.
+          x-gitbook-description-html: >-
+            <p>ID of the newly created API wallet. Any prior API wallets for
+            this account + builder code are revoked.</p>
+        api_wallet_public_key:
+          type: string
+          description: >-
+            Ed25519 public key of the API wallet (64 hex chars). Matches the
+            `public_key` sent in the request-signature step.
+          x-gitbook-description-html: >-
+            <p>Ed25519 public key of the API wallet (64 hex chars). Matches the
+            <code>public_key</code> sent in the request-signature step.</p>
+        api_wallet_expired_at:
+          type: string
+          format: date-time
+          description: Expiration timestamp for the API wallet.
+          x-gitbook-description-html: <p>Expiration timestamp for the API wallet.</p>
+        referral:
+          $ref: '#/components/schemas/BuilderConnectReferralResult'
+    BuilderConnectReferralResult:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - accepted
+            - already_accepted
+            - already_set
+            - skipped_self_referral
+            - skipped_circular_referral
+            - not_requested
+          description: >-
+            Outcome of optional referral attribution. `already_set` preserves a
+            different existing referrer; skipped statuses do not block builder
+            onboarding; `not_requested` means `referral_code` was omitted.
+          x-gitbook-description-html: >-
+            <p>Outcome of optional referral attribution.
+            <code>already_set</code> preserves a different existing referrer;
+            skipped statuses do not block builder onboarding;
+            <code>not_requested</code> means <code>referral_code</code> was
+            omitted.</p>
+        code:
+          type: string
+          description: >-
+            Accepted referral code. Present for `accepted` and
+            `already_accepted`; omitted for other statuses.
+          x-gitbook-description-html: >-
+            <p>Accepted referral code. Present for <code>accepted</code> and
+            <code>already_accepted</code>; omitted for other statuses.</p>
+    DepositQuoteRequest:
+      type: object
+      required:
+        - blockchain
+        - asset_symbol
+        - asset_amount
+      properties:
+        blockchain:
+          type: string
+          enum:
+            - ethereum
+            - solana
+            - cardano
+          description: Target blockchain for the deposit.
+          x-gitbook-description-html: <p>Target blockchain for the deposit.</p>
+        asset_symbol:
+          type: string
+          description: Asset to deposit (e.g. `USDC`, `SOL`, `ADA`).
+          x-gitbook-description-html: >-
+            <p>Asset to deposit (e.g. <code>USDC</code>, <code>SOL</code>,
+            <code>ADA</code>).</p>
+        asset_amount:
+          type: string
+          description: >-
+            Amount in the asset's smallest unit (e.g. lamports for SOL, lovelace
+            for ADA, wei for ETH). String to preserve precision.
+          x-gitbook-description-html: >-
+            <p>Amount in the asset's smallest unit (e.g. lamports for SOL,
+            lovelace for ADA, wei for ETH). String to preserve precision.</p>
+    DepositQuote:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: User's Strike account ID.
+          x-gitbook-description-html: <p>User's Strike account ID.</p>
+        request_id:
+          type: string
+          description: Unique identifier for this deposit request.
+          x-gitbook-description-html: <p>Unique identifier for this deposit request.</p>
+        blockchain:
+          type: string
+          description: Blockchain for the deposit.
+          x-gitbook-description-html: <p>Blockchain for the deposit.</p>
+        asset_symbol:
+          type: string
+          description: Asset being deposited.
+          x-gitbook-description-html: <p>Asset being deposited.</p>
+        asset_amount:
+          type: string
+          description: Amount in smallest unit.
+          x-gitbook-description-html: <p>Amount in smallest unit.</p>
+        usd_value:
+          type: string
+          description: USD equivalent of the deposit amount.
+          x-gitbook-description-html: <p>USD equivalent of the deposit amount.</p>
+        exchange_rate:
+          type: string
+          description: Exchange rate used for USD conversion.
+          x-gitbook-description-html: <p>Exchange rate used for USD conversion.</p>
+        confirmations:
+          type: integer
+          description: Number of blockchain confirmations required.
+          x-gitbook-description-html: <p>Number of blockchain confirmations required.</p>
+        timestamp:
+          type: integer
+          format: int64
+          description: Quote creation time (Unix milliseconds).
+          x-gitbook-description-html: <p>Quote creation time (Unix milliseconds).</p>
+        expiration_at:
+          type: integer
+          format: int64
+          description: Quote expiry time (Unix milliseconds).
+          x-gitbook-description-html: <p>Quote expiry time (Unix milliseconds).</p>
+    DepositQuoteResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: >-
+            Unique identifier for this deposit request. Use this in the build-tx
+            and confirm steps.
+          x-gitbook-description-html: >-
+            <p>Unique identifier for this deposit request. Use this in the
+            build-tx and confirm steps.</p>
+        quote:
+          $ref: '#/components/schemas/DepositQuote'
+        deposit_address:
+          type: string
+          description: >-
+            Strike's vault deposit address. This is hardcoded per chain in
+            backend config — it cannot be overridden by the caller.
+          x-gitbook-description-html: >-
+            <p>Strike's vault deposit address. This is hardcoded per chain in
+            backend config — it cannot be overridden by the caller.</p>
+        confirmations_required:
+          type: integer
+          description: Number of blockchain confirmations needed.
+          x-gitbook-description-html: <p>Number of blockchain confirmations needed.</p>
+        signature:
+          type: string
+          description: >-
+            Server-side Ed25519 signature over the quote. Used by the engine to
+            verify quote integrity.
+          x-gitbook-description-html: >-
+            <p>Server-side Ed25519 signature over the quote. Used by the engine
+            to verify quote integrity.</p>
+    BuildTxRequest:
+      type: object
+      required:
+        - request_id
+        - user_address
+      properties:
+        request_id:
+          type: string
+          description: The `request_id` from the deposit quote response.
+          x-gitbook-description-html: <p>The <code>request_id</code> from the deposit quote response.</p>
+        user_address:
+          type: string
+          description: >-
+            User's wallet address. Used as the `from` address in the unsigned
+            transaction.
+          x-gitbook-description-html: >-
+            <p>User's wallet address. Used as the <code>from</code> address in
+            the unsigned transaction.</p>
+        utxos:
+          type: array
+          items:
+            type: string
+          description: >-
+            CIP-30 hex-encoded UTXOs. Required for Cardano deposits — used to
+            build the transaction inputs.
+          x-gitbook-description-html: >-
+            <p>CIP-30 hex-encoded UTXOs. Required for Cardano deposits — used to
+            build the transaction inputs.</p>
+    BuildTxResponseEVM:
+      type: object
+      properties:
+        blockchain:
+          type: string
+          enum:
+            - ethereum
+          description: Always `ethereum` for EVM transactions.
+          x-gitbook-description-html: <p>Always <code>ethereum</code> for EVM transactions.</p>
+        unsigned_tx:
+          $ref: '#/components/schemas/EVMTransactionParams'
+        format:
+          type: string
+          enum:
+            - evm_tx_params
+          description: Always `evm_tx_params` for EVM chains.
+          x-gitbook-description-html: <p>Always <code>evm_tx_params</code> for EVM chains.</p>
+        expires_at:
+          type: integer
+          format: int64
+          description: >-
+            Transaction expiry time (Unix milliseconds). Only present for chains
+            with time-limited transactions.
+          x-gitbook-description-html: >-
+            <p>Transaction expiry time (Unix milliseconds). Only present for
+            chains with time-limited transactions.</p>
+        approval_tx:
+          allOf:
+            - $ref: '#/components/schemas/EVMTransactionParams'
+          description: >-
+            Separate ERC-20 approval transaction. Only present when the user's
+            token allowance is insufficient for the deposit. Must be signed and
+            submitted before the main deposit transaction.
+          x-gitbook-description-html: >-
+            <p>Separate ERC-20 approval transaction. Only present when the
+            user's token allowance is insufficient for the deposit. Must be
+            signed and submitted before the main deposit transaction.</p>
+    EVMTransactionParams:
+      type: object
+      properties:
+        from:
+          type: string
+          description: User's EVM address.
+          x-gitbook-description-html: <p>User's EVM address.</p>
+        to:
+          type: string
+          description: Strike's deposit contract address.
+          x-gitbook-description-html: <p>Strike's deposit contract address.</p>
+        data:
+          type: string
+          description: Encoded contract call data (e.g. ERC-20 `transfer`).
+          x-gitbook-description-html: >-
+            <p>Encoded contract call data (e.g. ERC-20
+            <code>transfer</code>).</p>
+        value:
+          type: string
+          description: Native token value in hex (e.g. `0x0` for ERC-20 transfers).
+          x-gitbook-description-html: >-
+            <p>Native token value in hex (e.g. <code>0x0</code> for ERC-20
+            transfers).</p>
+        gas:
+          type: string
+          description: Estimated gas limit in hex.
+          x-gitbook-description-html: <p>Estimated gas limit in hex.</p>
+    BuildTxResponseSolana:
+      type: object
+      properties:
+        blockchain:
+          type: string
+          enum:
+            - solana
+          description: Always `solana` for Solana transactions.
+          x-gitbook-description-html: <p>Always <code>solana</code> for Solana transactions.</p>
+        unsigned_tx:
+          type: string
+          description: Base64-encoded Solana transaction.
+          x-gitbook-description-html: <p>Base64-encoded Solana transaction.</p>
+        format:
+          type: string
+          enum:
+            - solana_base64
+          description: Always `solana_base64` for Solana.
+          x-gitbook-description-html: <p>Always <code>solana_base64</code> for Solana.</p>
+        expires_at:
+          type: integer
+          format: int64
+          description: >-
+            Transaction expiry time (Unix milliseconds). Solana transactions are
+            tied to a recent blockhash and expire quickly.
+          x-gitbook-description-html: >-
+            <p>Transaction expiry time (Unix milliseconds). Solana transactions
+            are tied to a recent blockhash and expire quickly.</p>
+    BuildTxResponseCardano:
+      type: object
+      properties:
+        blockchain:
+          type: string
+          enum:
+            - cardano
+          description: Always `cardano` for Cardano transactions.
+          x-gitbook-description-html: <p>Always <code>cardano</code> for Cardano transactions.</p>
+        unsigned_tx:
+          type: string
+          description: CBOR hex-encoded Cardano transaction.
+          x-gitbook-description-html: <p>CBOR hex-encoded Cardano transaction.</p>
+        format:
+          type: string
+          enum:
+            - cardano_cbor
+          description: Always `cardano_cbor` for Cardano.
+          x-gitbook-description-html: <p>Always <code>cardano_cbor</code> for Cardano.</p>
+        expires_at:
+          type: integer
+          format: int64
+          description: Transaction expiry time (Unix milliseconds).
+          x-gitbook-description-html: <p>Transaction expiry time (Unix milliseconds).</p>
+    DepositConfirmRequest:
+      type: object
+      required:
+        - request_id
+        - tx_hash
+      properties:
+        request_id:
+          type: string
+          description: The `request_id` from the deposit quote response.
+          x-gitbook-description-html: <p>The <code>request_id</code> from the deposit quote response.</p>
+        tx_hash:
+          type: string
+          description: >-
+            On-chain transaction hash after the user signed and submitted the
+            transaction.
+          x-gitbook-description-html: >-
+            <p>On-chain transaction hash after the user signed and submitted the
+            transaction.</p>
+    DepositConfirmResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: The deposit request ID.
+          x-gitbook-description-html: <p>The deposit request ID.</p>
+        status:
+          type: string
+          enum:
+            - pending
+          description: >-
+            Current status of the deposit. Always `pending` — the backend
+            monitors the blockchain for confirmations asynchronously.
+          x-gitbook-description-html: >-
+            <p>Current status of the deposit. Always <code>pending</code> — the
+            backend monitors the blockchain for confirmations
+            asynchronously.</p>
+        tx_hash:
+          type: string
+          description: The on-chain transaction hash that was submitted.
+          x-gitbook-description-html: <p>The on-chain transaction hash that was submitted.</p>
+        message:
+          type: string
+          description: Human-readable confirmation message.
+          x-gitbook-description-html: <p>Human-readable confirmation message.</p>
+    WithdrawQuoteRequest:
+      type: object
+      required:
+        - blockchain
+      properties:
+        mode:
+          type: string
+          enum:
+            - balance
+            - collateral
+          default: balance
+          description: >-
+            Withdrawal mode. Omit or use `balance` for USD-value withdrawals
+            from the user's trading balance. Use `collateral` for raw collateral
+            withdrawals with `asset_symbol` and `asset_amount`.
+          x-gitbook-description-html: >-
+            <p>Withdrawal mode. Omit or use <code>balance</code> for USD-value
+            withdrawals from the user's trading balance. Use
+            <code>collateral</code> for raw collateral withdrawals with
+            <code>asset_symbol</code> and <code>asset_amount</code>.</p>
+        usd_value:
+          type: string
+          description: >-
+            USD amount to withdraw. Required for `balance` mode. String to
+            preserve precision.
+          x-gitbook-description-html: >-
+            <p>USD amount to withdraw. Required for <code>balance</code> mode.
+            String to preserve precision.</p>
+        blockchain:
+          type: string
+          enum:
+            - ethereum
+            - solana
+            - cardano
+          description: Blockchain to withdraw to.
+          x-gitbook-description-html: <p>Blockchain to withdraw to.</p>
+        asset:
+          type: string
+          description: >-
+            Balance-mode withdrawal asset (e.g. `ADA`, `USDM`, `USDC`).
+            Optional — defaults to the chain's native asset if empty.
+          x-gitbook-description-html: >-
+            <p>Balance-mode withdrawal asset (e.g. <code>ADA</code>,
+            <code>USDM</code>, <code>USDC</code>). Optional — defaults to the
+            chain's native asset if empty.</p>
+        asset_symbol:
+          type: string
+          description: >-
+            Collateral-mode raw asset symbol, e.g. `LP_SUNDAE_USDCx_USDM`.
+            Required when `mode` is `collateral`.
+          x-gitbook-description-html: >-
+            <p>Collateral-mode raw asset symbol, e.g.
+            <code>LP_SUNDAE_USDCx_USDM</code>. Required when
+            <code>mode</code> is <code>collateral</code>.</p>
+        asset_amount:
+          type: string
+          description: >-
+            Collateral-mode raw amount in the asset's smallest unit. Required
+            when `mode` is `collateral`.
+          x-gitbook-description-html: >-
+            <p>Collateral-mode raw amount in the asset's smallest unit. Required
+            when <code>mode</code> is <code>collateral</code>.</p>
+    WithdrawQuoteResponse:
+      type: object
+      properties:
+        withdraw_id:
+          type: string
+          description: Unique identifier for this withdrawal. Use this in the confirm step.
+          x-gitbook-description-html: >-
+            <p>Unique identifier for this withdrawal. Use this in the confirm
+            step.</p>
+        fee:
+          type: string
+          description: Withdrawal fee in USD. String to preserve precision.
+          x-gitbook-description-html: <p>Withdrawal fee in USD. String to preserve precision.</p>
+        message_to_sign:
+          type: string
+          description: >-
+            Message payload for the user to sign in their wallet. Ethereum and
+            Solana return human-readable UTF-8 text. Cardano returns
+            hex-encoded UTF-8 text for CIP-30 `signData`; clients may hex-decode
+            it for display, but the wallet signature must cover the returned
+            payload. The message contains the wallet address, chain, amount,
+            fee, timestamp, and withdraw ID.
+          x-gitbook-description-html: >-
+            <p>Message payload for the user to sign in their wallet. Ethereum
+            and Solana return human-readable UTF-8 text. Cardano returns
+            hex-encoded UTF-8 text for CIP-30 <code>signData</code>; clients may
+            hex-decode it for display, but the wallet signature must cover the
+            returned payload. The message contains the wallet address, chain,
+            amount, fee, timestamp, and withdraw ID.</p>
+        tx_cbor:
+          type: string
+          description: >-
+            Cardano only. Unsigned funding transaction CBOR hex. When present,
+            the wallet must sign this transaction and submit the signed CBOR as
+            `signed_tx_cbor` in the confirm step.
+          x-gitbook-description-html: >-
+            <p>Cardano only. Unsigned funding transaction CBOR hex. When
+            present, the wallet must sign this transaction and submit the signed
+            CBOR as <code>signed_tx_cbor</code> in the confirm step.</p>
+        validator_address:
+          type: string
+          description: >-
+            Cardano only. Validator address selected when `tx_cbor` was built.
+            This is returned for visibility and is bound into the stored quote;
+            clients do not send it back.
+          x-gitbook-description-html: >-
+            <p>Cardano only. Validator address selected when <code>tx_cbor</code>
+            was built. This is returned for visibility and is bound into the
+            stored quote; clients do not send it back.</p>
+    WithdrawConfirmRequest:
+      type: object
+      required:
+        - withdraw_id
+        - wallet_signature
+      properties:
+        withdraw_id:
+          type: string
+          description: The `withdraw_id` from the withdraw quote response.
+          x-gitbook-description-html: >-
+            <p>The <code>withdraw_id</code> from the withdraw quote
+            response.</p>
+        wallet_signature:
+          type: string
+          description: >-
+            The user's wallet signature over the `message_to_sign` from the
+            quote response. Format depends on chain: hex-encoded for Ethereum,
+            base58-encoded for Solana, and CIP-30 COSE format
+            (`{coseSign1Hex}:{coseKeyHex}`) for Cardano.
+          x-gitbook-description-html: >-
+            <p>The user's wallet signature over the <code>message_to_sign</code>
+            from the quote response. Format depends on chain: hex-encoded for
+            Ethereum, base58-encoded for Solana, and CIP-30 COSE format
+            (<code>{coseSign1Hex}:{coseKeyHex}</code>) for Cardano.</p>
+        signed_tx_cbor:
+          type: string
+          description: >-
+            Cardano only. Required when the quote response included `tx_cbor`.
+            This is the signed funding transaction CBOR returned by the wallet.
+          x-gitbook-description-html: >-
+            <p>Cardano only. Required when the quote response included
+            <code>tx_cbor</code>. This is the signed funding transaction CBOR
+            returned by the wallet.</p>
+    WithdrawConfirmResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: The withdrawal request ID (same as `withdraw_id`).
+          x-gitbook-description-html: <p>The withdrawal request ID (same as <code>withdraw_id</code>).</p>
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+            - failed
+          description: >-
+            Current status of the withdrawal. Initially `pending` while the
+            engine processes it.
+          x-gitbook-description-html: >-
+            <p>Current status of the withdrawal. Initially <code>pending</code>
+            while the engine processes it.</p>
+        sequence_id:
+          type: integer
+          format: int64
+          description: Engine sequence ID for the withdrawal command.
+          x-gitbook-description-html: <p>Engine sequence ID for the withdrawal command.</p>
+        message_id:
+          type: string
+          description: Redis stream message ID for tracking.
+          x-gitbook-description-html: <p>Redis stream message ID for tracking.</p>
+    WithdrawQueuePositionResponse:
+      type: object
+      properties:
+        withdrawal_id:
+          type: string
+          description: Withdrawal ID being inspected.
+        queued:
+          type: boolean
+          description: Whether the withdrawal is currently waiting in a retry or settlement queue.
+        status:
+          type: string
+          description: High-level queue status, e.g. `queued` or `not_deferred`.
+        queue_status:
+          type: string
+          description: Chain-specific queue status when available.
+        transaction_status:
+          type: string
+          description: On-chain or validator transaction status when available.
+        blockchain:
+          type: string
+          description: Blockchain for the withdrawal.
+        wait_seconds:
+          type: integer
+          format: int64
+          description: Estimated seconds until retry or execution.
+        estimated_at:
+          type: integer
+          format: int64
+          description: Estimated Unix timestamp when the withdrawal can proceed.
+        retry_at:
+          type: integer
+          format: int64
+          description: Unix timestamp for the next retry attempt.
+        retry_reason:
+          type: string
+          description: Reason the withdrawal is queued, if any.
+        queue_tx_hash:
+          type: string
+          description: Chain transaction hash associated with the queued withdrawal, if known.
+    WithdrawLimitsResponse:
+      type: object
+      properties:
+        asset:
+          type: string
+          description: Asset symbol used for the limits query.
+        blockchain:
+          type: string
+          description: Blockchain used for the limits query.
+        as_of:
+          type: integer
+          format: int64
+          description: Unix timestamp for the limit snapshot.
+        as_of_basis:
+          type: string
+          description: Source of the snapshot timestamp when chain-specific.
+        buckets:
+          $ref: '#/components/schemas/WithdrawLimitBuckets'
+        queue:
+          $ref: '#/components/schemas/WithdrawLimitsQueue'
+        large_withdrawal:
+          $ref: '#/components/schemas/WithdrawLimitsLargeWithdrawal'
+    WithdrawLimitBuckets:
+      type: object
+      properties:
+        per_asset_1h:
+          $ref: '#/components/schemas/WithdrawLimitBucket'
+        per_asset_24h:
+          $ref: '#/components/schemas/WithdrawLimitBucket'
+        global_1h:
+          $ref: '#/components/schemas/WithdrawLimitBucket'
+        global_24h:
+          $ref: '#/components/schemas/WithdrawLimitBucket'
+    WithdrawLimitBucket:
+      type: object
+      properties:
+        window_seconds:
+          type: integer
+          format: int64
+          description: Rolling or fixed window length in seconds.
+        limit:
+          type: string
+          description: Maximum withdrawal amount for this bucket, formatted in display asset units.
+        used:
+          type: string
+          description: Effective amount already used in this window.
+        remaining:
+          type: string
+          description: Amount still available in this window.
+        current_used:
+          type: string
+          description: Current window usage before rolling-window weighting.
+        previous_used:
+          type: string
+          description: Previous window usage used for rolling-window weighting.
+        window_start:
+          type: integer
+          format: int64
+          description: Unix timestamp for the current window start.
+        usage:
+          type: array
+          description: Chain-specific usage entries when available.
+          items:
+            $ref: '#/components/schemas/WithdrawLimitUsageEntry'
+    WithdrawLimitUsageEntry:
+      type: object
+      properties:
+        timestamp:
+          type: integer
+          format: int64
+        timestamp_ms:
+          type: integer
+          format: int64
+        amount:
+          type: string
+          description: Display amount used by this entry.
+        raw_amount:
+          type: string
+          description: Smallest-unit amount used by this entry.
+        asset_ix:
+          type: string
+          description: Chain-specific asset index when available.
+    WithdrawLimitsQueue:
+      type: object
+      properties:
+        pending_count:
+          type: integer
+          format: int64
+        pending_asset_count:
+          type: integer
+          format: int64
+        pending_total_amount:
+          type: string
+        pending_asset_total_amount:
+          type: string
+        large_withdrawals_pending:
+          type: integer
+          format: int64
+        estimated_drain_seconds:
+          type: integer
+          format: int64
+        estimated_asset_drain_seconds:
+          type: integer
+          format: int64
+        retry_slot_seconds:
+          type: integer
+          format: int64
+        estimate_method:
+          type: string
+        retry_delay_seconds:
+          type: integer
+          format: int64
+        retry_buffer_seconds:
+          type: integer
+          format: int64
+        retry_poll_seconds:
+          type: integer
+          format: int64
+        retry_requeue_batch_size:
+          type: integer
+          format: int64
+        settlement_slot_seconds:
+          type: integer
+          format: int64
+        confirmation_buffer_seconds:
+          type: integer
+          format: int64
+        pending_withdrawals:
+          type: array
+          items:
+            $ref: '#/components/schemas/WithdrawLimitsPendingWithdrawal'
+    WithdrawLimitsPendingWithdrawal:
+      type: object
+      properties:
+        queue_index:
+          type: integer
+          format: int64
+        asset:
+          type: string
+        amount:
+          type: string
+        raw_amount:
+          type: string
+        policy_id:
+          type: string
+        asset_name_hex:
+          type: string
+        retry_at:
+          type: integer
+          format: int64
+        estimated_at:
+          type: integer
+          format: int64
+        wait_seconds:
+          type: integer
+          format: int64
+        matches_asset:
+          type: boolean
+    WithdrawLimitsLargeWithdrawal:
+      type: object
+      properties:
+        threshold:
+          type: string
+          description: Amount at or above which large-withdrawal queueing applies.
+        queue_delay_seconds:
+          type: integer
+          format: int64
+        estimated_total_delay_seconds:
+          type: integer
+          format: int64
+        worker_poll_seconds:
+          type: integer
+          format: int64
+        settlement_slot_seconds:
+          type: integer
+          format: int64
+        confirmation_buffer_seconds:
+          type: integer
+          format: int64
+        pending:
+          $ref: '#/components/schemas/WithdrawLimitsLargeWithdrawalPending'
+    WithdrawLimitsLargeWithdrawalPending:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int64
+        asset_count:
+          type: integer
+          format: int64
+        asset_total_amount:
+          type: string
+        global_total_amount:
+          type: string
+        executable_count:
+          type: integer
+          format: int64
+        executable_asset_count:
+          type: integer
+          format: int64
+        executable_asset_total_amount:
+          type: string
+        executable_global_total_amount:
+          type: string
+        next_executable_at:
+          type: integer
+          format: int64

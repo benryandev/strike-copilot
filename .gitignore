@@ -1,0 +1,11 @@
+# private: never commit
+.secrets/
+profile.json
+.env
+.env.*
+data/
+# python
+__pycache__/
+*.pyc
+.venv/
+.DS_Store

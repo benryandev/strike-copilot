@@ -1,0 +1,1811 @@
+openapi: 3.0.3
+info:
+  title: Strike Copy Trading API
+  description: >
+    Copy-trading endpoints for Strike V2. Follow a Strike or Hyperliquid lead
+    trader, manage subscriptions, and read copy orders and positions.
+
+
+    Every authenticated endpoint accepts an API Wallet (the same signed headers
+    used for order placement) as well as a browser JWT. Write endpoints under
+    `/v2/copy/subscribe` additionally require trading to be enabled on the
+    account.
+
+
+    Decimal values are returned as strings (except the stats dashboard
+    series, which return numbers). Timestamps are Unix milliseconds.
+
+
+    The stats dashboard endpoints are served by the stats service under the
+    `/stat` prefix (see the per-path `servers`).
+  version: 1.0.0
+
+servers:
+  - url: https://api.strikefinance.org
+    description: Production
+  - url: https://api-v2-testnet.strikefinance.org
+    description: Testnet
+
+tags:
+  - name: Copy Trading (Public)
+    description: Public copy-trading endpoints — no authentication required.
+  - name: Copy Trader Discovery (Public)
+    description: >
+      Search and rank Hyperliquid and Strike traders to copy. Public,
+      cached for 60 s (filters: 300 s).
+  - name: Copy Trading Stats (Public)
+    description: >
+      Platform-wide copy-trading dashboard series from the stats service.
+      Public and cached.
+  - name: Copy Trading (Authenticated)
+    description: >
+      Subscription management and follower reads — API Wallet auth required.
+      Read endpoints marked "public selector" also answer unauthenticated
+      requests that name an account with `account_id` or `blockchain_address`.
+
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
+security: []
+
+components:
+  securitySchemes:
+    ApiWalletAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Wallet-Public-Key
+      description: >
+        Ed25519 public key of an authorised API wallet.
+        Must be accompanied by `X-Api-Wallet-Signature`,
+        `X-Api-Wallet-Signature-Timestamp`, and `X-Api-Wallet-Nonce` headers.
+
+  # -------------------------------------------------------------------------
+  # Reusable parameters
+  # -------------------------------------------------------------------------
+  parameters:
+    SubscriptionIdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Copy subscription ID (`subscription_id`).
+
+    SubAccountIdQuery:
+      name: sub_account_id
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: >
+        Act on / read one of the caller's sub-accounts instead of the
+        master account. Must be an active sub-account owned by the caller.
+
+    PublicAccountIdQuery:
+      name: account_id
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: >
+        Public selector — read another account's data without auth.
+        Mutually exclusive with `sub_account_id`.
+
+    PublicBlockchainAddressQuery:
+      name: blockchain_address
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >
+        Public selector — resolve the account from a wallet address (chain
+        inferred from the address shape, or pass `blockchain`).
+
+    LeadAccountIdQuery:
+      name: lead_account_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >
+        Filter by lead trader. Strike leads are account UUIDs; Hyperliquid
+        leads are lowercase 0x addresses. `trader` is accepted as an alias.
+
+  # -------------------------------------------------------------------------
+  # Schemas
+  # -------------------------------------------------------------------------
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+
+    SubscribeRequest:
+      type: object
+      required: [lead_account_id, copy_mode]
+      properties:
+        sub_account_id:
+          type: string
+          format: uuid
+          description: Follow from this sub-account instead of the master account.
+        lead_account_id:
+          type: string
+          description: Strike account UUID or Hyperliquid 0x address to follow.
+        platform:
+          type: string
+          enum: ["strike", "hyperliquid"]
+          default: strike
+        copy_mode:
+          type: string
+          enum: ["fixed_ratio", "fixed_amount"]
+          description: >
+            `fixed_ratio` scales each lead order by `copy_amount` relative to
+            the lead's equity. `fixed_amount` (fixed margin) opens every
+            copied entry with `margin_per_entry_order` of initial margin.
+        copy_amount:
+          type: string
+          description: USD allocation. Required for `fixed_ratio`; must be omitted for `fixed_amount`.
+          example: "5000"
+        margin_per_entry_order:
+          type: string
+          description: USD initial margin per copied entry. Required for `fixed_amount`; must be omitted for `fixed_ratio`.
+          example: "50"
+        max_margin_per_symbol:
+          type: string
+          description: Cap on initial margin the subscription may deploy in any one symbol. Omit for no cap.
+        excluded_symbols:
+          type: array
+          items:
+            type: string
+          description: Markets the subscription never opens or adds to (e.g. `["DOGE-USD"]`).
+        copy_existing_positions:
+          type: boolean
+          default: false
+          description: Mirror the lead's already-open positions once, right after subscribing.
+
+    SubscribeResponse:
+      type: object
+      required: [subscription_id, status]
+      properties:
+        subscription_id:
+          type: string
+        status:
+          type: string
+          enum: ["active"]
+
+    UpdateSubscriptionRequest:
+      type: object
+      description: >
+        Change sizing on an active subscription. The copy mode itself cannot
+        change; send only the fields of the subscription's mode.
+      properties:
+        sub_account_id:
+          type: string
+          format: uuid
+          description: Required when the subscription belongs to a sub-account.
+        copy_amount:
+          type: string
+          description: New allocation (`fixed_ratio` only).
+        margin_per_entry_order:
+          type: string
+          description: New margin per entry (`fixed_amount` only).
+        max_margin_per_symbol:
+          type: string
+          description: Omit to leave unchanged, `"0"` to clear, positive to set.
+        excluded_symbols:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: Omit to leave unchanged, `[]` to clear, otherwise replaces the list.
+
+    CopySubscription:
+      type: object
+      required:
+        - subscription_id
+        - lead_account_id
+        - copy_mode
+        - status
+        - created_at_ms
+        - total_margin
+        - total_worth
+        - realized_pnl
+        - pnl
+        - filled_order_count
+        - total_volume
+      properties:
+        subscription_id:
+          type: string
+        account_id:
+          type: string
+          description: Follower account owning the row. Only set on `scope=all` responses.
+        lead_account_id:
+          type: string
+        lead_platform:
+          type: string
+          enum: ["strike", "hyperliquid"]
+        lead_nickname:
+          type: string
+        lead_avatar_url:
+          type: string
+        lead_address:
+          type: string
+        copy_mode:
+          type: string
+          enum: ["fixed_ratio", "fixed_amount"]
+        copy_amount:
+          type: string
+        budget_remaining:
+          type: string
+          description: Same as `copy_amount` for `fixed_ratio`.
+        margin_per_entry_order:
+          type: string
+        max_margin_per_symbol:
+          type: string
+        excluded_symbols:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: ["active", "stopped"]
+        created_at_ms:
+          type: integer
+          format: int64
+        stopped_at_ms:
+          type: integer
+          format: int64
+        total_margin:
+          type: string
+          description: Initial margin currently held by the subscription's copy positions.
+        total_worth:
+          type: string
+          description: Margin plus unrealized PnL of the copy positions.
+        realized_pnl:
+          type: string
+          description: Realized PnL net of trading fees on attributed fills.
+        pnl:
+          type: string
+          description: Realized (net of fees) plus unrealized PnL.
+        filled_order_count:
+          type: integer
+          format: int64
+        total_volume:
+          type: string
+
+    CopyOrderTrader:
+      type: object
+      required: [account_id]
+      properties:
+        account_id:
+          type: string
+        platform:
+          type: string
+          enum: ["strike", "hyperliquid"]
+        nickname:
+          type: string
+        avatar_url:
+          type: string
+        address:
+          type: string
+
+    CopyFollowerOrder:
+      type: object
+      description: The follower-side order placed by copy trading.
+      properties:
+        order_id:
+          type: integer
+          format: int64
+        status:
+          type: string
+        side:
+          type: string
+          enum: ["buy", "sell"]
+        type:
+          type: string
+          description: Order type (market, limit, …).
+        size:
+          type: string
+        filled:
+          type: string
+        price:
+          type: string
+        fee:
+          type: string
+        pnl:
+          type: string
+
+    CopyOrder:
+      type: object
+      required:
+        - id
+        - subscription_id
+        - lead_account_id
+        - lead_order_id
+        - lead_client_order_id
+        - symbol
+        - status
+        - created_at_ms
+        - updated_at_ms
+      properties:
+        id:
+          type: string
+        subscription_id:
+          type: string
+        lead_account_id:
+          type: string
+        lead_nickname:
+          type: string
+        lead_avatar_url:
+          type: string
+        lead_address:
+          type: string
+        lead_order_id:
+          type: integer
+          format: int64
+        lead_client_order_id:
+          type: string
+        symbol:
+          type: string
+          example: BTC-USD
+        status:
+          type: string
+          enum: ["pending", "failed", "canceled", "open", "rejected", "filled"]
+        error_message:
+          type: string
+          description: Why the copy was skipped or failed. Omitted on public (unauthenticated) reads.
+        follower_client_order_id:
+          type: string
+          description: Always prefixed `copy:` — the same id appears on the follower's order and fill history.
+        follower_order:
+          $ref: "#/components/schemas/CopyFollowerOrder"
+        created_at_ms:
+          type: integer
+          format: int64
+        updated_at_ms:
+          type: integer
+          format: int64
+
+    CopyOrdersResponse:
+      type: object
+      required: [orders, traders]
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/CopyOrder"
+        traders:
+          type: array
+          description: Every lead the follower has copied (for building a lead filter), independent of order filters.
+          items:
+            $ref: "#/components/schemas/CopyOrderTrader"
+        next_before_ms:
+          type: integer
+          format: int64
+          description: Pass as `before` to fetch the next page. Absent on the last page.
+        next_before_id:
+          type: string
+          description: Pass as `before_id` to fetch the next page.
+
+    CopyPosition:
+      type: object
+      required:
+        - id
+        - lead_account_id
+        - market
+        - side
+        - margin_mode
+        - collateral
+        - leverage
+        - entry_price
+        - mark_price
+        - liquidation_price
+        - size
+        - pnl
+      properties:
+        id:
+          type: string
+        subscription_id:
+          type: string
+          description: Subscription the slice belongs to. Absent on `own` rows.
+        own:
+          type: boolean
+          description: >
+            true = the follower's own (non-copied) remainder on a market the
+            follower also holds through copy trading.
+        lead_account_id:
+          type: string
+        lead_nickname:
+          type: string
+        lead_avatar_url:
+          type: string
+        market:
+          type: string
+          example: BTC-USD
+        side:
+          type: string
+          enum: ["long", "short"]
+        margin_mode:
+          type: string
+        collateral:
+          type: string
+        leverage:
+          type: integer
+        entry_price:
+          type: string
+        mark_price:
+          type: string
+        liquidation_price:
+          type: string
+        size:
+          type: string
+        pnl:
+          type: string
+          description: Unrealized PnL.
+
+    CopyPositionsResponse:
+      type: object
+      required: [positions, traders, total_margin, total_worth, realized_pnl, total_pnl]
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: "#/components/schemas/CopyPosition"
+        traders:
+          type: array
+          items:
+            $ref: "#/components/schemas/CopyOrderTrader"
+        total_margin:
+          type: string
+        total_worth:
+          type: string
+        realized_pnl:
+          type: string
+        total_pnl:
+          type: string
+
+    StrikeLeadStatsResponse:
+      type: object
+      required: [lead_account_id, profit_share_rate, today, daily, profit_shares]
+      properties:
+        lead_account_id:
+          type: string
+        profit_share_rate:
+          type: string
+          description: Fraction of a follower's positive closed PnL paid to the lead on unsubscribe.
+          example: "0.1"
+        today:
+          type: object
+          properties:
+            date:
+              type: string
+              format: date
+            copier_count:
+              type: integer
+            volume:
+              type: string
+            unrealized_shared_profit:
+              type: string
+              description: Profit share the lead would earn if every active follower stopped now.
+            shared_profit:
+              type: string
+        daily:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              copier_count:
+                type: integer
+              volume:
+                type: string
+              shared_profit:
+                type: string
+        profit_shares:
+          type: array
+          description: Paid profit shares, newest first.
+          items:
+            type: object
+            properties:
+              address:
+                type: string
+              nickname:
+                type: string
+              avatar_url:
+                type: string
+              copy_mode:
+                type: string
+                enum: ["fixed_ratio", "fixed_amount"]
+              copy_amount:
+                type: string
+              margin_per_entry_order:
+                type: string
+              total_volume:
+                type: string
+              filled_order_count:
+                type: integer
+                format: int64
+              closed_pnl:
+                type: string
+              amount:
+                type: string
+                description: Profit share paid to the lead.
+              stopped_at_ms:
+                type: integer
+                format: int64
+
+    LeadTrader:
+      type: object
+      required: [account_id, follower_count]
+      properties:
+        account_id:
+          type: string
+        platform:
+          type: string
+          enum: ["strike", "hyperliquid"]
+        nickname:
+          type: string
+        avatar_url:
+          type: string
+        follower_count:
+          type: integer
+        top_assets:
+          type: array
+          items:
+            type: object
+            properties:
+              asset:
+                type: string
+              symbol:
+                type: string
+        style:
+          type: string
+        bias:
+          type: string
+        copy_score:
+          type: string
+        recommended_direction:
+          type: string
+          enum: ["copy", "counter", "none"]
+        last_traded_at_ms:
+          type: integer
+          format: int64
+        stats_updated_at_ms:
+          type: integer
+          format: int64
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        follower:
+          $ref: "#/components/schemas/CopyOrderTrader"
+        lead_account_id:
+          type: string
+        follower_count:
+          type: integer
+          description: Active followers of the lead.
+        copy_mode:
+          type: string
+          enum: ["fixed_ratio", "fixed_amount"]
+        copy_amount:
+          type: string
+        margin_per_entry_order:
+          type: string
+        status:
+          type: string
+          enum: ["active", "stopped", "liquidated"]
+        created_at:
+          type: integer
+          format: int64
+        stopped_at:
+          type: integer
+          format: int64
+        platform:
+          type: string
+          enum: ["strike", "hyperliquid"]
+        closed_pnl:
+          type: string
+        realized_pnl:
+          type: string
+        filled_order_count:
+          type: integer
+          format: int64
+        total_volume:
+          type: string
+
+    SavedTraderResponse:
+      type: object
+      required: [lead_account_id]
+      properties:
+        lead_account_id:
+          type: string
+        saved_at_ms:
+          type: integer
+          format: int64
+          description: Present on save only.
+
+    DiscoveryWindows:
+      type: object
+      description: One value per window (decimal strings). A window may be absent when unknown.
+      properties:
+        1d:
+          type: string
+        7d:
+          type: string
+        30d:
+          type: string
+        all:
+          type: string
+
+    DiscoveryTrader:
+      type: object
+      required: [address, pnl, roi, volume, enrichment_state, top_assets]
+      properties:
+        address:
+          type: string
+          description: >
+            Lead id to pass as `lead_account_id` when subscribing — a
+            lowercase 0x address for Hyperliquid, the account UUID for Strike.
+        platform:
+          type: string
+          enum: ["hyperliquid", "strike"]
+        display_name:
+          type: string
+          description: Strike nickname.
+        blockchain_address:
+          type: string
+          description: Strike trader's wallet address.
+        avatar_url:
+          type: string
+        account_value:
+          type: string
+          description: Current equity (USD).
+        pnl:
+          $ref: "#/components/schemas/DiscoveryWindows"
+        roi:
+          $ref: "#/components/schemas/DiscoveryWindows"
+        volume:
+          $ref: "#/components/schemas/DiscoveryWindows"
+        enrichment_state:
+          type: string
+          description: "`ready` once fills and portfolio history have been analysed; style, bias and scores are only set then."
+        equity_curve_30d:
+          type: array
+          description: "30-day equity sparkline, `[timestamp_ms, value]` pairs."
+          items:
+            type: array
+            items:
+              type: number
+        pnl_curve_30d:
+          type: array
+          description: "30-day cumulative trading PnL sparkline, `[timestamp_ms, value]` pairs."
+          items:
+            type: array
+            items:
+              type: number
+        top_assets:
+          type: array
+          items:
+            type: object
+            properties:
+              asset:
+                type: string
+              symbol:
+                type: string
+        style:
+          type: string
+          enum: ["market_maker", "algo", "scalper", "day", "swing", "position", "inactive", "unknown"]
+        bias:
+          type: string
+          enum: ["long", "short", "neutral"]
+        copy_amount_coverage:
+          type: array
+          description: >
+            Fixed-ratio allocation curve: for each candidate `copy_amount`,
+            the share (0–1) of the lead's recent opening notional whose
+            proportional copy would clear Strike's order rules.
+          items:
+            type: object
+            properties:
+              copy_amount:
+                type: string
+              coverage:
+                type: string
+        copy_score:
+          type: string
+          description: Copy score (0–100) for the requested `score_window`.
+        copy_scores:
+          type: object
+          description: Copy score per window.
+          properties:
+            7d:
+              type: string
+            30d:
+              type: string
+            all:
+              type: string
+        copy_score_breakdown:
+          type: object
+          additionalProperties: true
+          description: Component scores behind `copy_score` (shape versioned by `score_version`).
+        copy_score_breakdowns:
+          type: object
+          description: Breakdown per window (`7d`, `30d`, `all`).
+          additionalProperties: true
+        score_version:
+          type: integer
+        recommended_direction:
+          type: string
+          enum: ["copy", "counter", "none"]
+        last_traded_at_ms:
+          type: integer
+          format: int64
+        peak_concurrent_entries:
+          type: string
+          description: >
+            Most copied entries the recent fill window held open at once. Times
+            a `margin_per_entry_order` it estimates the margin a fixed-margin
+            copy needs.
+        fills_window_days:
+          type: string
+          description: Span of the fill window behind `peak_concurrent_entries`.
+
+    DiscoverTradersResponse:
+      type: object
+      required: [items, total, data_as_of_ms]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiscoveryTrader"
+        next_cursor:
+          type: string
+          description: Pass as `cursor` for the next page (with identical filters). Absent on the last page.
+        total:
+          type: integer
+          format: int64
+          description: Total matches for the filters.
+        data_as_of_ms:
+          type: integer
+          format: int64
+
+    DiscoveryFiltersResponse:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        platforms:
+          type: array
+          items:
+            type: string
+        styles:
+          type: array
+          items:
+            type: string
+        biases:
+          type: array
+          items:
+            type: string
+        sort_keys:
+          type: array
+          items:
+            type: string
+        rank_keys:
+          type: array
+          items:
+            type: string
+        asset_modes:
+          type: array
+          items:
+            type: string
+        pnl_windows:
+          type: array
+          items:
+            type: string
+        score_windows:
+          type: array
+          items:
+            type: string
+        drawdown_windows:
+          type: array
+          items:
+            type: string
+        score_version:
+          type: integer
+
+    StatsSeries:
+      type: array
+      description: >
+        Compact daily series. Each point is `[timestamp_ms, key, value]`:
+        UTC day start, the series key (symbol, copy mode, …), and a number.
+      items:
+        type: array
+        minItems: 3
+        maxItems: 3
+        items:
+          description: timestamp_ms (integer), key (string), value (number).
+      example: [[1787270400000, "BTC-USD", 490.77581], [1787270400000, "ETH-USD", 214.3784]]
+
+  responses:
+    BadRequest:
+      description: Invalid parameters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Missing or invalid API wallet signature (or no public selector on a read).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Sub-account not owned by the caller, or trading not enabled.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Subscription or lead not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Disabled:
+      description: Copy trading is disabled on this environment.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+  # ---------------- Public ----------------
+  /v2/copy/lead-traders:
+    get:
+      tags: ["Copy Trading (Public)"]
+      summary: List lead traders being followed
+      description: Leads with at least one follower, plus the copy minimums enforced on subscribe.
+      operationId: listCopyLeadTraders
+      responses:
+        "200":
+          description: Lead traders and copy limits.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lead_traders:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LeadTrader"
+                  min_copy_amount:
+                    type: string
+                    description: Minimum `copy_amount` for `fixed_ratio`.
+                  min_margin_per_entry_order:
+                    type: string
+                    description: Minimum `margin_per_entry_order` for `fixed_amount`.
+                  max_followers_per_lead:
+                    type: integer
+                  profit_share_rate:
+                    type: string
+                    description: Profit share paid to Strike leads on unsubscribe.
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  /v2/copy/leaderboard:
+    get:
+      tags: ["Copy Trading (Public)"]
+      summary: Copy subscription leaderboard
+      description: Public per-subscription results. Cached per status (default 10 minutes).
+      operationId: listCopyLeaderboard
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["active", "stopped", "liquidated"]
+            default: active
+        - $ref: "#/components/parameters/LeadAccountIdQuery"
+      responses:
+        "200":
+          description: Leaderboard entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LeaderboardEntry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  # ---------------- Discovery ----------------
+  /v2/copy/discover:
+    get:
+      tags: ["Copy Trader Discovery (Public)"]
+      summary: Discover traders to copy
+      description: >
+        Filtered, sorted, cursor-paginated trader search. Every filter is
+        optional; ranges are inclusive.
+      operationId: discoverCopyTraders
+      parameters:
+        - name: platform
+          in: query
+          schema:
+            type: string
+            enum: ["hyperliquid", "strike", "all"]
+            default: hyperliquid
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: >
+            `0x…` prefix or full address; otherwise matches Strike nickname,
+            account id, or wallet address by prefix.
+        - name: top
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+          description: Only traders ranked within the top N by `rank_by`.
+        - name: rank_by
+          in: query
+          schema:
+            type: string
+            enum: ["pnl_30d", "equity", "volume_30d"]
+            default: pnl_30d
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: ["pnl_1d", "pnl_7d", "pnl_30d", "pnl_all", "roi_1d", "roi_7d", "roi_30d", "roi_all", "volume_1d", "volume_7d", "volume_30d", "volume_all", "equity", "copy_score", "max_drawdown"]
+            default: pnl_30d
+          description: "`copy_score` and `max_drawdown` force `enriched_only=true`."
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: ["desc", "asc"]
+            default: desc
+        - name: assets
+          in: query
+          schema:
+            type: string
+          description: Comma-separated assets, e.g. `BTC,ETH` (`asset` also accepted).
+        - name: assets_mode
+          in: query
+          schema:
+            type: string
+            enum: ["any", "all", "only"]
+            default: any
+          description: "`any` = traded at least one; `all` = traded every one; `only` = traded nothing else."
+        - name: style
+          in: query
+          schema:
+            type: string
+          description: Comma-separated styles (see `/v2/copy/discover/filters`).
+        - name: bias
+          in: query
+          schema:
+            type: string
+            enum: ["long", "short", "neutral"]
+        - name: equity_min
+          in: query
+          schema:
+            type: string
+        - name: equity_max
+          in: query
+          schema:
+            type: string
+        - name: pnl_window
+          in: query
+          schema:
+            type: string
+            enum: ["1d", "7d", "30d", "all"]
+            default: 30d
+          description: Window `pnl_min` / `pnl_max` / `volume_min` / `volume_max` apply to.
+        - name: pnl_min
+          in: query
+          schema:
+            type: string
+        - name: pnl_max
+          in: query
+          schema:
+            type: string
+        - name: volume_min
+          in: query
+          schema:
+            type: string
+        - name: volume_max
+          in: query
+          schema:
+            type: string
+        - name: score_window
+          in: query
+          schema:
+            type: string
+            enum: ["7d", "30d", "all"]
+            default: 30d
+          description: Window behind `copy_score` and `min_copy_score`.
+        - name: min_copy_score
+          in: query
+          schema:
+            type: string
+          description: 0–100.
+        - name: strike_copyable_min
+          in: query
+          schema:
+            type: string
+          description: 0–1. Minimum share of the trader's volume in markets Strike lists.
+        - name: drawdown_window
+          in: query
+          schema:
+            type: string
+            enum: ["1d", "7d", "30d", "1y", "all"]
+          description: Defaults to `score_window`.
+        - name: drawdown_min
+          in: query
+          schema:
+            type: string
+          description: 0–1 fraction.
+        - name: drawdown_max
+          in: query
+          schema:
+            type: string
+          description: 0–1 fraction.
+        - name: enriched_only
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Only traders whose fills and history have been analysed.
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: "`next_cursor` from the previous page. Invalid if the filters changed."
+      responses:
+        "200":
+          description: A page of traders.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoverTradersResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  /v2/copy/discover/filters:
+    get:
+      tags: ["Copy Trader Discovery (Public)"]
+      summary: Discovery filter enums
+      operationId: getCopyDiscoveryFilters
+      responses:
+        "200":
+          description: Accepted filter and sort values.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryFiltersResponse"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  /v2/copy/discover/{address}:
+    get:
+      tags: ["Copy Trader Discovery (Public)"]
+      summary: One discovered trader
+      operationId: getDiscoveredCopyTrader
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hyperliquid 0x address or Strike account id.
+      responses:
+        "200":
+          description: The trader.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryTrader"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  # ---------------- Subscriptions ----------------
+  /v2/copy/subscribe:
+    post:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: Start copying a lead trader
+      description: >
+        Creates an active subscription. One active subscription per
+        (follower account, lead). Requires trading enabled.
+      operationId: subscribeCopyTrading
+      security:
+        - ApiWalletAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscribeRequest"
+            examples:
+              fixedRatio:
+                summary: Fixed ratio, $5,000 allocation
+                value:
+                  lead_account_id: "0x52b1b41d1492608400e9ff89078f8cbabb959b32"
+                  platform: hyperliquid
+                  copy_mode: fixed_ratio
+                  copy_amount: "5000"
+              fixedMargin:
+                summary: Fixed margin, $50 per entry, BTC capped at $500
+                value:
+                  lead_account_id: "01a05243-37d3-7d12-9f26-e5c1615eb4b9"
+                  platform: strike
+                  copy_mode: fixed_amount
+                  margin_per_entry_order: "50"
+                  max_margin_per_symbol: "500"
+      responses:
+        "201":
+          description: Subscription created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscribeResponse"
+        "400":
+          description: >
+            Invalid sizing, self-follow, following a vault, below the copy
+            minimums, or the lead's platform is disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Already copying this lead, or the lead is at the follower limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  /v2/copy/subscribe/{id}:
+    patch:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: Update subscription sizing
+      operationId: updateCopySubscription
+      security:
+        - ApiWalletAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubscriptionRequest"
+      responses:
+        "204":
+          description: Updated.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Disabled"
+    delete:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: Stop copying
+      description: >
+        Stops the subscription and always closes its copied open positions.
+        For a Strike lead, the profit share is paid out on stop.
+      operationId: stopCopyTrading
+      security:
+        - ApiWalletAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionIdPath"
+        - $ref: "#/components/parameters/SubAccountIdQuery"
+      responses:
+        "204":
+          description: Stopped.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  /v2/copy/subscriptions:
+    get:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: List subscriptions (public selector)
+      description: >
+        The caller's subscriptions, or — with `account_id` /
+        `blockchain_address` — any account's, without auth.
+      operationId: listCopySubscriptions
+      security:
+        - ApiWalletAuth: []
+        - {}
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["active", "stopped"]
+            default: active
+        - $ref: "#/components/parameters/SubAccountIdQuery"
+        - $ref: "#/components/parameters/PublicAccountIdQuery"
+        - $ref: "#/components/parameters/PublicBlockchainAddressQuery"
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["all"]
+          description: >
+            `all` merges the master account and every sub-account (each row
+            then carries `account_id`). Cannot be combined with `sub_account_id`.
+      responses:
+        "200":
+          description: Subscriptions, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [subscriptions]
+                properties:
+                  subscriptions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CopySubscription"
+                  accounts:
+                    type: array
+                    description: Contributing accounts. Only on `scope=all`.
+                    items:
+                      type: object
+                      properties:
+                        account_id:
+                          type: string
+                        name:
+                          type: string
+                        kind:
+                          type: string
+                          enum: ["master", "sub"]
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  # ---------------- Orders & positions ----------------
+  /v2/copy/orders:
+    get:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: List copy-triggered orders (public selector)
+      description: >
+        One row per lead order the subscription reacted to, with the
+        follower-side order when one was placed. Cursor-paginated, newest
+        first. Public reads omit `error_message`.
+      operationId: listCopyOrders
+      security:
+        - ApiWalletAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/SubAccountIdQuery"
+        - $ref: "#/components/parameters/PublicAccountIdQuery"
+        - $ref: "#/components/parameters/PublicBlockchainAddressQuery"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["all", "pending", "failed", "canceled", "open", "rejected", "filled"]
+            default: all
+        - $ref: "#/components/parameters/LeadAccountIdQuery"
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Market filter; comma-separated or repeated for several (`markets` also accepted).
+        - name: side
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["buy", "sell"]
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Follower order type filter; comma-separated for several.
+        - name: role
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["maker", "taker"]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: before
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Cursor — `next_before_ms` from the previous page.
+        - name: before_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Cursor — `next_before_id` from the previous page. Required with `before`.
+      responses:
+        "200":
+          description: A page of copy orders.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CopyOrdersResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  /v2/copy/positions:
+    get:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: List copy positions (public selector)
+      description: >
+        Open positions split per copy subscription, plus the follower's own
+        remainder (`own: true`) on those markets.
+      operationId: listCopyPositions
+      security:
+        - ApiWalletAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/SubAccountIdQuery"
+        - $ref: "#/components/parameters/PublicAccountIdQuery"
+        - $ref: "#/components/parameters/PublicBlockchainAddressQuery"
+        - $ref: "#/components/parameters/LeadAccountIdQuery"
+        - name: symbol
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Copy positions and totals.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CopyPositionsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  # ---------------- Lead dashboard ----------------
+  /v2/copy/lead/stats:
+    get:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: Strike lead dashboard
+      description: >
+        For a Strike account that others copy: daily copier count, copied
+        volume, profit share earned, and live unrealized profit share.
+      operationId: getStrikeLeadStats
+      security:
+        - ApiWalletAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SubAccountIdQuery"
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "30"
+          description: "`7`, `30`, `90` (numeric max 90) or `all`."
+      responses:
+        "200":
+          description: Lead stats.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StrikeLeadStatsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  # ---------------- Saved traders ----------------
+  /v2/copy/saved:
+    get:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: List saved lead traders
+      description: Bookmarks are kept on the master account.
+      operationId: listSavedCopyTraders
+      security:
+        - ApiWalletAuth: []
+      responses:
+        "200":
+          description: Saved leads.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [saved_traders]
+                properties:
+                  saved_traders:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        account_id:
+                          type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/Disabled"
+    post:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: Save a lead trader
+      operationId: saveCopyTrader
+      security:
+        - ApiWalletAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lead_account_id]
+              properties:
+                lead_account_id:
+                  type: string
+      responses:
+        "200":
+          description: Already saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedTraderResponse"
+        "201":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedTraderResponse"
+        "400":
+          description: Invalid body, or saving yourself.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  /v2/copy/saved/{account_id}:
+    delete:
+      tags: ["Copy Trading (Authenticated)"]
+      summary: Remove a saved lead trader
+      operationId: unsaveCopyTrader
+      security:
+        - ApiWalletAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The saved lead's account id / address.
+      responses:
+        "200":
+          description: Removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedTraderResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Not saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/Disabled"
+
+  # ---------------- Stats service ----------------
+  /v1/dashboard/copy-trading-summary:
+    get:
+      tags: ["Copy Trading Stats (Public)"]
+      summary: Current copy-trading totals
+      description: >
+        Live gross copied exposure and committed capital. Allocated = every
+        active fixed-ratio `copy_amount` (deployed or idle) plus the
+        collateral of positions opened by fixed-margin subscriptions.
+      operationId: getCopyTradingSummary
+      servers:
+        - url: https://api.strikefinance.org/stat
+          description: Production stats service
+        - url: https://api-v2-testnet.strikefinance.org/stat
+          description: Testnet stats service
+      responses:
+        "200":
+          description: Totals.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [open_interest_usd, total_allocated_usd, updated_at]
+                properties:
+                  open_interest_usd:
+                    type: string
+                    description: Notional of copied positions, long and short both counted.
+                  total_allocated_usd:
+                    type: string
+                  updated_at:
+                    type: integer
+                    format: int64
+        "503":
+          description: Mark prices unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/dashboard/copy-trading-volumes:
+    get:
+      tags: ["Copy Trading Stats (Public)"]
+      summary: Daily copy volume
+      description: >
+        Notional of copy orders whose fills were applied, per UTC day and symbol.
+      operationId: getCopyTradingVolumes
+      servers:
+        - url: https://api.strikefinance.org/stat
+          description: Production stats service
+        - url: https://api-v2-testnet.strikefinance.org/stat
+          description: Testnet stats service
+      responses:
+        "200":
+          description: Daily series.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [total_volume_daily]
+                properties:
+                  total_volume_daily:
+                    allOf:
+                      - $ref: "#/components/schemas/StatsSeries"
+                    description: Key = symbol, value = USD volume.
+        "500":
+          description: Query failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/dashboard/copy-trading-liquidations:
+    get:
+      tags: ["Copy Trading Stats (Public)"]
+      summary: Daily copy liquidations
+      description: >
+        Notional of force-closed (liquidated) copy positions, per UTC day and symbol.
+      operationId: getCopyTradingLiquidations
+      servers:
+        - url: https://api.strikefinance.org/stat
+          description: Production stats service
+        - url: https://api-v2-testnet.strikefinance.org/stat
+          description: Testnet stats service
+      responses:
+        "200":
+          description: Daily series.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [daily_liquidations]
+                properties:
+                  daily_liquidations:
+                    allOf:
+                      - $ref: "#/components/schemas/StatsSeries"
+                    description: Key = symbol, value = USD notional liquidated.
+        "500":
+          description: Query failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/dashboard/copy-trading-subscriptions:
+    get:
+      tags: ["Copy Trading Stats (Public)"]
+      summary: Daily new subscriptions
+      description: >
+        Copy subscriptions opened per UTC day, split by lead platform and copy mode.
+      operationId: getCopyTradingSubscriptions
+      servers:
+        - url: https://api.strikefinance.org/stat
+          description: Production stats service
+        - url: https://api-v2-testnet.strikefinance.org/stat
+          description: Testnet stats service
+      responses:
+        "200":
+          description: Daily series.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [daily_subscriptions]
+                properties:
+                  daily_subscriptions:
+                    allOf:
+                      - $ref: "#/components/schemas/StatsSeries"
+                    description: Key = `<platform>:<copy_mode>`, e.g. `strike:fixed_ratio`; value = count.
+        "500":
+          description: Query failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/dashboard/copy-trading-profits:
+    get:
+      tags: ["Copy Trading Stats (Public)"]
+      summary: Daily copy profits
+      description: >
+        Positive realized copy PnL (net of fees) per UTC day and symbol, from copied fills, manual-close allocations and force-close fills. Losses are not netted.
+      operationId: getCopyTradingProfits
+      servers:
+        - url: https://api.strikefinance.org/stat
+          description: Production stats service
+        - url: https://api-v2-testnet.strikefinance.org/stat
+          description: Testnet stats service
+      responses:
+        "200":
+          description: Daily series.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [daily_realized_pnl]
+                properties:
+                  daily_realized_pnl:
+                    allOf:
+                      - $ref: "#/components/schemas/StatsSeries"
+                    description: Key = symbol, value = USD profit.
+        "500":
+          description: Query failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/dashboard/copy-trading-open-interest:
+    get:
+      tags: ["Copy Trading Stats (Public)"]
+      summary: Daily copy open interest
+      description: >
+        Copied-position notional per symbol from the last snapshot of each UTC day (snapshots every 10 minutes).
+      operationId: getCopyTradingOpenInterest
+      servers:
+        - url: https://api.strikefinance.org/stat
+          description: Production stats service
+        - url: https://api-v2-testnet.strikefinance.org/stat
+          description: Testnet stats service
+      responses:
+        "200":
+          description: Daily series.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [open_interest]
+                properties:
+                  open_interest:
+                    allOf:
+                      - $ref: "#/components/schemas/StatsSeries"
+                    description: Key = symbol, value = USD notional.
+        "500":
+          description: Query failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/dashboard/copy-trading-allocated:
+    get:
+      tags: ["Copy Trading Stats (Public)"]
+      summary: Daily copy allocated capital
+      description: >
+        Allocated capital per copy mode from the last snapshot of each UTC day.
+      operationId: getCopyTradingAllocated
+      servers:
+        - url: https://api.strikefinance.org/stat
+          description: Production stats service
+        - url: https://api-v2-testnet.strikefinance.org/stat
+          description: Testnet stats service
+      responses:
+        "200":
+          description: Daily series.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [total_allocated]
+                properties:
+                  total_allocated:
+                    allOf:
+                      - $ref: "#/components/schemas/StatsSeries"
+                    description: Key = `fixed_ratio` or `fixed_amount`, value = USD.
+        "500":
+          description: Query failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"

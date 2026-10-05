@@ -1,0 +1,2115 @@
+openapi: 3.0.3
+info:
+  title: Strike Perpetuals - User Data REST API
+  description: Read-only endpoints for querying master accounts, owned subaccounts, public accounts, wallet addresses,
+    and vault account state, positions, and history.
+  version: 2.2.0
+  contact:
+    name: Strike Finance
+    url: https://www.strikefinance.org
+servers:
+- url: https://api.strikefinance.org
+  description: Mainnet
+- url: https://api-v2-testnet.strikefinance.org
+  description: Testnet
+tags:
+- name: Account
+  description: Account info, balances, and portfolio
+- name: Subaccounts
+  description: Subaccount discovery and selection
+- name: Positions
+  description: Open and closed position queries
+- name: History
+  description: Order, fill, funding, and transaction history
+x-tagGroups:
+- name: User Data
+  tags:
+  - Account
+  - Subaccounts
+  - Positions
+  - History
+security:
+- ApiWalletAuth: []
+  ApiWalletSignature: []
+  ApiWalletTimestamp: []
+  ApiWalletNonce: []
+- BearerAuth: []
+components:
+  securitySchemes:
+    ApiWalletAuth:
+      type: apiKey
+      in: header
+      name: X-API-Wallet-Public-Key
+      description: Ed25519 API-wallet public key (64 hex characters).
+    ApiWalletSignature:
+      type: apiKey
+      in: header
+      name: X-API-Wallet-Signature
+      description: Ed25519 signature (128 hex characters) over {METHOD}:{PATH_WITH_QUERY}:{TIMESTAMP}:{NONCE}:{SHA256_BODY_HEX}.
+    ApiWalletTimestamp:
+      type: apiKey
+      in: header
+      name: X-API-Wallet-Timestamp
+      description: Unix timestamp in seconds. It must not be in the future or older than three minutes.
+    ApiWalletNonce:
+      type: apiKey
+      in: header
+      name: X-API-Wallet-Nonce
+      description: Unique, single-use nonce between 16 and 128 characters.
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Account JWT returned by the authentication flow.
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Optional machine-readable error code
+        msg:
+          type: string
+          description: Optional alternative error message
+      required:
+      - error
+    AccountSubAccount:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Subaccount ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        name:
+          type: string
+          description: Display name
+          example: Market making
+      description: Active subaccount metadata included in account responses.
+      required:
+      - account_id
+      - name
+    SymbolSetting:
+      type: object
+      properties:
+        margin_mode:
+          type: string
+          description: Margin mode
+          enum:
+          - cross
+          - isolated
+          example: cross
+        leverage:
+          type: integer
+          format: int32
+          description: Leverage multiplier
+          minimum: 1
+          example: 10
+        allow_pre_trade:
+          type: boolean
+          description: Whether pre-trade is allowed
+          example: false
+      required:
+      - margin_mode
+      - leverage
+      - allow_pre_trade
+    GetAccountResponse:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Resolved account ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        name:
+          type: string
+          description: Subaccount display name; omitted for a master account
+        parent_account_id:
+          type: string
+          description: Parent account ID; present for a subaccount
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        parent_blockchain_address:
+          type: string
+          description: Parent wallet address; present when available for a subaccount
+          nullable: true
+        blockchain:
+          type: string
+          description: Registered blockchain. Empty for vault accounts and subaccounts.
+          example: cardano
+        blockchain_address:
+          type: string
+          description: Registered wallet address. Null for subaccounts and empty for vault accounts.
+          nullable: true
+          example: addr1qx...
+        nickname:
+          type: string
+          description: Public account nickname; omitted when empty
+        avatar_url:
+          type: string
+          description: Public account avatar URL; omitted when empty
+          format: uri
+        wallet_balance:
+          type: string
+          description: Wallet balance
+          example: '10000'
+        available_balance:
+          type: string
+          description: Balance available for new orders
+          example: '7500'
+        copy_reserved_balance:
+          type: string
+          description: Balance reserved by active copy-trading subscriptions
+          example: '0'
+        unrealized_pnl:
+          type: string
+          description: Total unrealized PnL
+          example: '250.5'
+        margin_balance:
+          type: string
+          description: Wallet balance plus unrealized PnL
+          example: '10250.5'
+        total_margin:
+          type: string
+          description: Total margin currently reserved
+          example: '2500'
+        position_initial_margin:
+          type: string
+          description: Initial margin held by positions
+          example: '2000'
+        maintenance_margin:
+          type: string
+          description: Maintenance margin requirement
+          example: '500'
+        sub_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountSubAccount'
+          description: Active subaccounts. For a selected subaccount, this contains its active siblings.
+        symbol_settings:
+          type: object
+          description: Per-symbol margin mode and leverage settings.
+          additionalProperties:
+            $ref: '#/components/schemas/SymbolSetting'
+      required:
+      - account_id
+      - blockchain
+      - blockchain_address
+      - wallet_balance
+      - available_balance
+      - copy_reserved_balance
+      - unrealized_pnl
+      - margin_balance
+      - total_margin
+      - position_initial_margin
+      - maintenance_margin
+      - sub_accounts
+    BalanceResponse:
+      type: object
+      properties:
+        asset:
+          type: string
+          description: Collateral asset
+          example: USDT
+        walletBalance:
+          type: string
+          description: Wallet balance
+          example: '10000'
+        unrealizedPnl:
+          type: string
+          description: Unrealized PnL
+          example: '250.5'
+        marginBalance:
+          type: string
+          description: Wallet balance plus unrealized PnL
+          example: '10250.5'
+        maintMargin:
+          type: string
+          description: Maintenance margin requirement
+          example: '500'
+        initialMargin:
+          type: string
+          description: Total initial margin
+          example: '2500'
+        positionInitialMargin:
+          type: string
+          description: Initial margin held by positions
+          example: '2000'
+        openOrderInitialMargin:
+          type: string
+          description: Initial margin held by open orders
+          example: '0'
+        crossWalletBalance:
+          type: string
+          description: Cross-margin wallet balance
+          example: '10000'
+        crossUnPnl:
+          type: string
+          description: Cross-margin unrealized PnL
+          example: '250.5'
+        availableBalance:
+          type: string
+          description: Balance available for new orders
+          example: '7500'
+        maxWithdrawAmount:
+          type: string
+          description: Maximum currently withdrawable amount
+          example: '7500'
+        marginAvailable:
+          type: boolean
+          description: Whether the asset is available as margin
+          example: true
+        updateTime:
+          type: integer
+          format: int64
+          description: Response calculation time in Unix milliseconds
+          example: 1709000000000
+        lockedRewards:
+          type: string
+          description: Rewards still locked against withdrawal
+          example: '0'
+        maxWithdrawAfterRewards:
+          type: string
+          description: Maximum withdrawable amount after locked rewards
+          example: '7500'
+        stakingRewardBalance:
+          type: string
+          description: Segregated staking reward balance; excluded from margin and withdrawals
+          example: '0'
+      required:
+      - asset
+      - walletBalance
+      - unrealizedPnl
+      - marginBalance
+      - maintMargin
+      - initialMargin
+      - positionInitialMargin
+      - openOrderInitialMargin
+      - crossWalletBalance
+      - crossUnPnl
+      - availableBalance
+      - maxWithdrawAmount
+      - marginAvailable
+      - updateTime
+      - lockedRewards
+      - maxWithdrawAfterRewards
+      - stakingRewardBalance
+    PortfolioAccountSummary:
+      type: object
+      properties:
+        realized_pnl:
+          type: string
+          description: Cumulative realized PnL
+          example: '1250.25'
+        all_time_volume:
+          type: string
+          description: Cumulative trading volume
+          example: '250000'
+        all_time_maker_rebates:
+          type: string
+          description: Cumulative maker rebates
+          example: '12.5'
+      required:
+      - realized_pnl
+      - all_time_volume
+      - all_time_maker_rebates
+    PortfolioCapitalFlows:
+      type: object
+      properties:
+        all_time_deposits:
+          type: string
+          description: All-time deposits
+          example: '0'
+        all_time_withdrawals:
+          type: string
+          description: All-time withdrawals
+          example: '0'
+        all_time_vault_deposits:
+          type: string
+          description: All-time vault deposits
+          example: '0'
+        all_time_vault_withdrawals:
+          type: string
+          description: All-time vault withdrawals
+          example: '0'
+        all_time_credit_vault_deposits:
+          type: string
+          description: Credit-funded vault deposits
+          example: '0'
+        all_time_credit_vault_withdrawals:
+          type: string
+          description: Credit-funded vault withdrawals
+          example: '0'
+        all_time_transfer_in:
+          type: string
+          description: Internal transfers received from the master account or siblings
+          example: '0'
+        all_time_transfer_out:
+          type: string
+          description: Internal transfers sent to the master account or siblings
+          example: '0'
+        all_time_reward_grants:
+          type: string
+          description: Reward grants credited outside normal deposits
+          example: '0'
+      required:
+      - all_time_deposits
+      - all_time_withdrawals
+      - all_time_vault_deposits
+      - all_time_vault_withdrawals
+      - all_time_credit_vault_deposits
+      - all_time_credit_vault_withdrawals
+      - all_time_transfer_in
+      - all_time_transfer_out
+      - all_time_reward_grants
+    PortfolioSubAccount:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Subaccount ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        parent_account_id:
+          type: string
+          description: Parent account ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        name:
+          type: string
+          description: Display name
+          example: Market making
+      required:
+      - account_id
+      - parent_account_id
+      - name
+    FeeTier:
+      type: object
+      properties:
+        Tier:
+          type: integer
+          format: int32
+          description: Tier number
+          minimum: 0
+          example: 0
+        MinVolume:
+          type: number
+          format: double
+          description: Minimum rolling 30-day volume
+          example: 0
+        TakerRate:
+          type: number
+          format: double
+          description: Taker fee rate
+          example: 0.0005
+        MakerRate:
+          type: number
+          format: double
+          description: Maker fee rate
+          example: 0.0002
+      description: Fee tier configuration. These legacy fields are serialized with PascalCase.
+      required:
+      - Tier
+      - MinVolume
+      - TakerRate
+      - MakerRate
+    MakerRebateTier:
+      type: object
+      properties:
+        tier:
+          type: integer
+          format: int32
+          description: Tier number
+          minimum: 1
+          example: 1
+        minMakerVolumeShare:
+          type: number
+          format: double
+          description: Strict lower maker-volume-share bound
+          example: 0.005
+        makerRate:
+          type: number
+          format: double
+          description: Maker fee or rebate rate; negative values are rebates
+          example: -1.0e-05
+      required:
+      - tier
+      - minMakerVolumeShare
+      - makerRate
+    StakingFeeDiscountTier:
+      type: object
+      properties:
+        tier:
+          type: integer
+          format: int32
+          description: Tier number
+          minimum: 1
+          example: 1
+        minStakedStrike:
+          type: number
+          format: double
+          description: Minimum active staked STRIKE
+          example: 1000
+        discountRate:
+          type: number
+          format: double
+          description: Positive-fee discount rate
+          example: 0.05
+      required:
+      - tier
+      - minStakedStrike
+      - discountRate
+    VolumeHistoryEntry:
+      type: object
+      properties:
+        date:
+          type: string
+          description: UTC date
+          format: date
+          example: '2026-08-04'
+        exchange_volume:
+          type: string
+          description: Exchange-wide volume for the date
+          example: '0'
+        weighted_maker_volume:
+          type: string
+          description: Account weighted maker volume
+          example: '0'
+        weighted_taker_volume:
+          type: string
+          description: Account weighted taker volume
+          example: '0'
+      required:
+      - date
+      - exchange_volume
+      - weighted_maker_volume
+      - weighted_taker_volume
+    PortfolioPerpHistoryPoint:
+      type: array
+      items: &id001
+        oneOf:
+        - type: integer
+          format: int64
+        - type: string
+      description: 'Tuple: [timestamp_ms, account_value, realized_pnl, unrealized_pnl, cumulative_volume].'
+      minItems: 5
+      maxItems: 5
+    PortfolioVaultHistoryPoint:
+      type: array
+      items: *id001
+      description: 'Tuple: [timestamp_ms, vault_value, vault_total_pnl].'
+      minItems: 3
+      maxItems: 3
+    PortfolioSummaryResponse:
+      type: object
+      properties:
+        account:
+          $ref: '#/components/schemas/PortfolioAccountSummary'
+        perp_account:
+          $ref: '#/components/schemas/PortfolioAccountSummary'
+        capital_flows:
+          $ref: '#/components/schemas/PortfolioCapitalFlows'
+        sub_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioSubAccount'
+          description: Active child subaccounts when the selected account is a master account.
+        volume:
+          type: string
+          description: All-time trading volume
+          example: '0'
+        fees:
+          type: string
+          description: All-time fees
+          example: '0'
+        all_time_maker_rebates:
+          type: string
+          description: All-time maker rebates
+          example: '0'
+        history_perp_only:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioPerpHistoryPoint'
+        history_vault:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioVaultHistoryPoint'
+        fee_tier:
+          type: integer
+          format: int32
+          description: Current fee tier
+          minimum: 0
+          example: 0
+        fee_tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeTier'
+        maker_rebate_tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/MakerRebateTier'
+        staking_fee_discount_tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/StakingFeeDiscountTier'
+        maker_fee_rate_override:
+          type: string
+          description: Account-specific maker rate override
+          nullable: true
+        staking_fee_discount_staked_strike:
+          type: string
+          description: Active staked STRIKE used for fee discounts
+          example: '0'
+        staking_fee_discount_rate:
+          type: string
+          description: Current staking fee discount rate
+          example: '0'
+        staking_reward_balance:
+          type: string
+          description: Segregated staking reward balance
+          example: '0'
+        volume_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/VolumeHistoryEntry'
+          description: The preceding 30 complete UTC days.
+        fee_discount_rate:
+          type: integer
+          format: int64
+          description: Referral fee discount percentage
+          minimum: 0
+          example: 4
+        is_trading_enabled:
+          type: boolean
+          description: Whether trading is enabled for the current authentication context
+        min_deposit_usd:
+          type: integer
+          format: int32
+          description: Effective minimum deposit amount in USD
+          minimum: 0
+          example: 3
+        min_withdraw_usd:
+          type: integer
+          format: int32
+          description: Effective minimum withdrawal amount in USD
+          minimum: 0
+          example: 5
+      required:
+      - account
+      - perp_account
+      - capital_flows
+      - sub_accounts
+      - volume
+      - fees
+      - all_time_maker_rebates
+      - history_perp_only
+      - history_vault
+      - fee_tier
+      - fee_tiers
+      - maker_rebate_tiers
+      - staking_fee_discount_tiers
+      - maker_fee_rate_override
+      - staking_fee_discount_staked_strike
+      - staking_fee_discount_rate
+      - staking_reward_balance
+      - volume_history
+      - fee_discount_rate
+      - is_trading_enabled
+      - min_deposit_usd
+      - min_withdraw_usd
+    Position:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Position ID
+          minimum: 0
+          example: 1
+        margin_mode:
+          type: string
+          description: Margin mode
+          enum:
+          - cross
+          - isolated
+          example: cross
+        leverage:
+          type: integer
+          format: int32
+          description: Leverage multiplier
+          minimum: 1
+          example: 10
+        size:
+          type: string
+          description: Signed position size in base units
+          example: '0.5'
+        entry_price:
+          type: string
+          description: Average entry price
+          example: '50000'
+        iso_balance:
+          type: string
+          description: Isolated-margin balance
+          example: '0'
+        accumulated_funding_fees:
+          type: string
+          description: Accumulated funding fees
+          example: '-1.25'
+        create_timestamp:
+          type: integer
+          format: int64
+          description: Creation time in Unix milliseconds
+          example: 1709000000000
+        update_timestamp:
+          type: integer
+          format: int64
+          description: Last update time in Unix milliseconds
+          example: 1709000001000
+        symbol:
+          type: string
+          description: Trading pair
+          example: BTC-USD
+        upnl:
+          type: string
+          description: Unrealized PnL
+          example: '250.5'
+        maintenance_margin:
+          type: string
+          description: Maintenance margin requirement
+          example: '125'
+        bankruptcy_price:
+          type: string
+          description: Estimated bankruptcy price
+          example: '45000'
+        liquidation_price:
+          type: string
+          description: Estimated liquidation price
+          example: '45500'
+      required:
+      - id
+      - margin_mode
+      - leverage
+      - size
+      - entry_price
+      - iso_balance
+      - accumulated_funding_fees
+      - create_timestamp
+      - update_timestamp
+      - symbol
+      - upnl
+      - maintenance_margin
+      - bankruptcy_price
+      - liquidation_price
+    PositionsResponse:
+      type: object
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Position'
+        count:
+          type: integer
+          format: int32
+          description: Number of positions returned
+          minimum: 0
+          example: 1
+      required:
+      - positions
+      - count
+    ClosedPosition:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+          description: Position row ID
+          minimum: 0
+          example: 1
+        AccountID:
+          type: string
+          description: Account ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        Symbol:
+          type: string
+          description: Trading pair
+          example: BTC-USD
+        MarginMode:
+          type: string
+          description: Margin mode
+          enum:
+          - cross
+          - isolated
+          example: cross
+        OpenTimestamp:
+          type: integer
+          format: int64
+          description: Open time in Unix milliseconds
+          example: 1709000000000
+        CloseTimestamp:
+          type: integer
+          format: int64
+          description: Close time in Unix milliseconds
+          nullable: true
+          example: 1709086400000
+      description: Closed-position database row. These legacy fields are serialized with PascalCase.
+      required:
+      - ID
+      - AccountID
+      - Symbol
+      - MarginMode
+      - OpenTimestamp
+      - CloseTimestamp
+    ClosedPositionsResponse:
+      type: object
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClosedPosition'
+        count:
+          type: integer
+          format: int32
+          description: Number of positions returned
+          minimum: 0
+          example: 10
+      required:
+      - positions
+      - count
+    OrderHistoryResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Order ID
+          minimum: 0
+          example: 123456
+        client_order_id:
+          type: string
+          description: Client order ID
+          example: my-order-001
+        account_id:
+          type: string
+          description: Account ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        symbol:
+          type: string
+          description: Trading pair
+          example: BTC-USD
+        strategy_id:
+          type: string
+          description: Strategy ID
+          nullable: true
+        is_primary:
+          type: boolean
+          description: Whether this is a strategy's primary order
+          nullable: true
+        close_reason:
+          type: string
+          description: Strategy close reason
+          nullable: true
+        side:
+          type: string
+          description: Order side
+          enum:
+          - buy
+          - sell
+          example: buy
+        status:
+          type: string
+          description: Order status
+          enum:
+          - pending
+          - open
+          - filled
+          - canceled
+          - untriggered
+          - rejected
+          - expired
+          example: filled
+        type:
+          type: string
+          description: Order type
+          enum:
+          - market
+          - limit
+          - stop
+          - stop_limit
+          - take_profit
+          - take_profit_limit
+          - trailing_stop_market
+          example: limit
+        origin_type:
+          type: string
+          description: Original order type before any trigger conversion; empty or null when not applicable
+          enum:
+          - ''
+          - market
+          - limit
+          - stop
+          - stop_limit
+          - take_profit
+          - take_profit_limit
+          - trailing_stop_market
+          nullable: true
+        auto_close_type:
+          type: string
+          description: System auto-close reason; null for ordinary orders
+          enum:
+          - ''
+          - liquidation
+          - adl
+          - bankrupt
+          - if_transfer
+          - vault_withdrawal
+          nullable: true
+        time_in_force:
+          type: string
+          description: Time in force
+          enum:
+          - GTC
+          - FOK
+          - IOC
+          nullable: true
+        working_type:
+          type: string
+          description: Trigger working price
+          enum:
+          - none
+          - contract_price
+          - mark_price
+          nullable: true
+        size:
+          type: string
+          description: Requested size
+          example: '0.1'
+        filled:
+          type: string
+          description: Filled size
+          example: '0.1'
+        price:
+          type: string
+          description: Order price
+          example: '50000'
+        stop_price:
+          type: string
+          description: Trigger price
+          example: '0'
+        post_only:
+          type: boolean
+          description: Whether the order is post-only
+        reduce_only:
+          type: boolean
+          description: Whether the order is reduce-only
+        close_position:
+          type: boolean
+          description: Whether the order closes the full position
+        price_protect:
+          type: boolean
+          description: Whether trigger price protection is enabled
+        callback_rate:
+          type: string
+          description: Trailing-stop callback rate; omitted for other order types
+        activation_price:
+          type: string
+          description: Trailing-stop activation price; omitted for other order types
+        trailing_extreme:
+          type: string
+          description: Current trailing extreme; omitted for other order types
+        trailing_activated:
+          type: boolean
+          description: Whether the trailing stop has activated; omitted for other order types
+        create_timestamp:
+          type: integer
+          format: int64
+          description: Creation time in Unix milliseconds
+        entry_timestamp:
+          type: integer
+          format: int64
+          description: Engine entry time in Unix milliseconds
+        event_timestamp:
+          type: integer
+          format: int64
+          description: Last event time in Unix milliseconds
+      required:
+      - id
+      - client_order_id
+      - account_id
+      - symbol
+      - strategy_id
+      - is_primary
+      - close_reason
+      - side
+      - status
+      - type
+      - origin_type
+      - auto_close_type
+      - time_in_force
+      - working_type
+      - size
+      - filled
+      - price
+      - stop_price
+      - post_only
+      - reduce_only
+      - close_position
+      - price_protect
+      - create_timestamp
+      - entry_timestamp
+      - event_timestamp
+    OrderHistoryResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderHistoryResult'
+        count:
+          type: integer
+          format: int32
+          description: Number of orders returned
+          minimum: 0
+      required:
+      - orders
+      - count
+    FillHistoryResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Internal fill row ID
+          minimum: 0
+          example: 789
+        trade_id:
+          type: integer
+          format: int64
+          description: Public trade ID
+          minimum: 0
+          example: 987654
+        order_id:
+          type: integer
+          format: int64
+          description: Associated order ID
+          minimum: 0
+          example: 123456
+        account_id:
+          type: string
+          description: Account ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        symbol:
+          type: string
+          description: Trading pair
+          example: BTC-USD
+        side:
+          type: string
+          description: Trade side
+          enum:
+          - buy
+          - sell
+          example: buy
+        role:
+          type: string
+          description: Liquidity role
+          enum:
+          - maker
+          - taker
+          example: maker
+        price:
+          type: string
+          description: Execution price
+          example: '50000'
+        size:
+          type: string
+          description: Executed size
+          example: '0.1'
+        realized_pnl:
+          type: string
+          description: Realized PnL
+          example: '0'
+        fee:
+          type: string
+          description: Trading fee
+          example: '2.5'
+        fee_type:
+          type: string
+          description: Fee classification
+          enum:
+          - none
+          - commission
+          - liquidation
+          - funding
+        liquidation_fee:
+          type: string
+          description: Liquidation fee; omitted for non-liquidation fills
+        entry_price:
+          type: string
+          description: Entry price for closing fills; omitted when unavailable
+        close_price:
+          type: string
+          description: Close price for closing fills; omitted when unavailable
+        margin:
+          type: string
+          description: Margin attributed to the fill; omitted when unavailable
+        roi_pct:
+          type: string
+          description: Return on investment percentage; omitted when unavailable
+        leverage:
+          type: integer
+          format: int32
+          description: Leverage; omitted when unavailable
+          minimum: 0
+        timestamp:
+          type: integer
+          format: int64
+          description: Fill time in Unix milliseconds
+          example: 1709000001000
+        auto_close_type:
+          type: string
+          description: Associated order auto-close type; null for regular fills
+          enum:
+          - ''
+          - liquidation
+          - adl
+          - bankrupt
+          - if_transfer
+          - vault_withdrawal
+          nullable: true
+      required:
+      - id
+      - trade_id
+      - order_id
+      - account_id
+      - symbol
+      - side
+      - role
+      - price
+      - size
+      - realized_pnl
+      - fee
+      - fee_type
+      - timestamp
+      - auto_close_type
+    FillHistoryResponse:
+      type: object
+      properties:
+        fills:
+          type: array
+          items:
+            $ref: '#/components/schemas/FillHistoryResult'
+        count:
+          type: integer
+          format: int32
+          description: Number of fills returned
+          minimum: 0
+      required:
+      - fills
+      - count
+    FundingHistoryResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Funding row ID
+          minimum: 0
+        transaction_id:
+          type: integer
+          format: int64
+          description: Associated transaction ID
+          minimum: 0
+        account_id:
+          type: string
+          description: Account ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        position_id:
+          type: integer
+          format: int64
+          description: Position ID
+          minimum: 0
+        symbol:
+          type: string
+          description: Trading pair
+          example: BTC-USD
+        position_size:
+          type: string
+          description: Absolute position size in base units
+          example: '0.5'
+        position_side:
+          type: string
+          description: Position side
+          enum:
+          - Long
+          - Short
+          example: Long
+        funding_rate:
+          type: string
+          description: Funding rate
+          example: '0.0001'
+        amount:
+          type: string
+          description: Funding amount; positive means received and negative means paid
+          example: '-1.25'
+        timestamp:
+          type: integer
+          format: int64
+          description: Funding time in Unix milliseconds
+          example: 1709003600000
+      required:
+      - id
+      - transaction_id
+      - account_id
+      - position_id
+      - symbol
+      - position_size
+      - position_side
+      - funding_rate
+      - amount
+      - timestamp
+    FundingHistoryResponse:
+      type: object
+      properties:
+        funding:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundingHistoryResult'
+        count:
+          type: integer
+          format: int32
+          description: Number of funding records returned
+          minimum: 0
+      required:
+      - funding
+      - count
+    TransactionHistoryResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Transaction row ID
+          minimum: 0
+        request_id:
+          type: string
+          description: Idempotency/request ID
+        account_id:
+          type: string
+          description: Account ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        type:
+          type: string
+          description: Transaction type
+          enum:
+          - deposit
+          - withdraw
+          - fee
+          - realized_pnl
+          - liquidation
+          - funding
+          - reward_grant
+          - reward_reclaim
+          - credit
+          - transfer
+        amount:
+          type: string
+          description: Signed transaction amount
+          example: '0'
+        asset:
+          type: string
+          description: Asset identifier; omitted when unavailable
+        blockchain:
+          type: string
+          description: Blockchain identifier; may be empty for internal transactions
+        blockchain_address:
+          type: string
+          description: Source blockchain address; may be empty
+        tx_hash:
+          type: string
+          description: Source transaction hash
+          nullable: true
+        recipient_address:
+          type: string
+          description: Recipient address
+          nullable: true
+        status:
+          type: string
+          description: Transaction status
+          enum:
+          - pending
+          - completed
+          - pending_settlement
+          - settled
+          - failed
+          - cancelled
+        timestamp:
+          type: integer
+          format: int64
+          description: Transaction time in Unix milliseconds
+        asset_symbol:
+          type: string
+          description: Transferred asset symbol
+          nullable: true
+        asset_amount:
+          type: string
+          description: Transferred asset amount
+          nullable: true
+        metadata:
+          type: object
+          description: Transaction-specific metadata; omitted when absent.
+          additionalProperties: true
+        settlement_tx_hash:
+          type: string
+          description: Settlement transaction hash; omitted when absent
+      required:
+      - id
+      - request_id
+      - account_id
+      - type
+      - amount
+      - blockchain
+      - blockchain_address
+      - tx_hash
+      - recipient_address
+      - status
+      - timestamp
+      - asset_symbol
+      - asset_amount
+    TransactionHistoryResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionHistoryResult'
+        count:
+          type: integer
+          format: int32
+          description: Number of transactions returned
+          minimum: 0
+      required:
+      - transactions
+      - count
+    SubAccount:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Subaccount ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        parent_account_id:
+          type: string
+          description: Parent/master account ID
+          format: uuid
+          example: 019d1935-5bba-726e-a38e-838a892245f3
+        name:
+          type: string
+          description: Display name
+          example: Market making
+        status:
+          type: string
+          description: Lifecycle status
+          enum:
+          - pending
+          - active
+          example: active
+        equity:
+          type: string
+          description: Current equity
+          example: '1000'
+        available_balance:
+          type: string
+          description: Balance available for new orders
+          example: '800'
+        unrealized_pnl:
+          type: string
+          description: Unrealized PnL
+          example: '25'
+        total_pnl:
+          type: string
+          description: Realized plus unrealized PnL
+          example: '75'
+        margin_used_pct:
+          type: string
+          description: Margin used as a percentage of equity
+          example: '20'
+      required:
+      - account_id
+      - parent_account_id
+      - name
+      - status
+      - equity
+      - available_balance
+      - unrealized_pnl
+      - total_pnl
+      - margin_used_pct
+    SubAccountsResponse:
+      type: object
+      properties:
+        sub_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubAccount'
+      required:
+      - sub_accounts
+  responses:
+    InvalidParameter:
+      description: Invalid query parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication is missing, invalid, or does not own the selected subaccount
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Account, vault, or requested resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  parameters:
+    AccountID:
+      name: account_id
+      in: query
+      required: false
+      description: Public account lookup by UUID. Takes precedence over every other account selector.
+      schema:
+        type: string
+        format: uuid
+    SubAccountID:
+      name: sub_account_id
+      in: query
+      required: false
+      description: Select an active subaccount owned by the authenticated master account. Requires JWT or API-wallet
+        authentication and is used only when account_id, vault_id, and blockchain_address are absent.
+      schema:
+        type: string
+        format: uuid
+    VaultID:
+      name: vault_id
+      in: query
+      required: false
+      description: Public vault lookup. Resolves the vault's trading account; ignored when account_id is present.
+      schema:
+        type: string
+    Blockchain:
+      name: blockchain
+      in: query
+      required: false
+      description: Blockchain used with blockchain_address for a direct lookup. If omitted, the server infers or
+        searches supported chains.
+      schema:
+        type: string
+        enum:
+        - cardano
+        - ethereum
+        - solana
+    BlockchainAddress:
+      name: blockchain_address
+      in: query
+      required: false
+      description: Public wallet-address lookup (maximum 512 bytes).
+      schema:
+        type: string
+        maxLength: 512
+paths:
+  /v2/account:
+    get:
+      tags:
+      - Account
+      summary: Get account info
+      description: Returns balances, margin totals, profile data, symbol settings, and active subaccount metadata.
+        A master account response includes its active sub_accounts. Selecting sub_account_id returns that owned
+        subaccount and includes parent_account_id, parent_blockchain_address, and its active siblings. Public account
+        selectors do not require authentication; sub_account_id and the no-selector caller context do. Selector
+        precedence is account_id, vault_id, blockchain address, then authenticated caller/subaccount.
+      parameters:
+      - $ref: '#/components/parameters/AccountID'
+      - $ref: '#/components/parameters/SubAccountID'
+      - $ref: '#/components/parameters/VaultID'
+      - $ref: '#/components/parameters/Blockchain'
+      - $ref: '#/components/parameters/BlockchainAddress'
+      responses:
+        '200':
+          description: Account information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAccountResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+      operationId: getAccount
+      security:
+      - {}
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      - BearerAuth: []
+  /v2/balances:
+    get:
+      tags:
+      - Account
+      summary: Get balances
+      description: Returns the current collateral balance and margin breakdown for the resolved master account,
+        owned subaccount, public account, wallet address, or vault. Public account selectors do not require authentication;
+        sub_account_id and the no-selector caller context do. Selector precedence is account_id, vault_id, blockchain
+        address, then authenticated caller/subaccount.
+      parameters:
+      - $ref: '#/components/parameters/AccountID'
+      - $ref: '#/components/parameters/SubAccountID'
+      - $ref: '#/components/parameters/VaultID'
+      - $ref: '#/components/parameters/Blockchain'
+      - $ref: '#/components/parameters/BlockchainAddress'
+      responses:
+        '200':
+          description: Balance details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BalanceResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+      operationId: getBalances
+      security:
+      - {}
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      - BearerAuth: []
+  /v2/portfolio:
+    get:
+      tags:
+      - Account
+      summary: Get portfolio summary
+      description: Returns portfolio PnL, capital flows, fee configuration, history, and volume data. A master account
+        response also includes active sub_accounts; sub_account_id returns metrics scoped to the selected owned
+        subaccount. Public account selectors do not require authentication; sub_account_id and the no-selector caller
+        context do. Selector precedence is account_id, vault_id, blockchain address, then authenticated caller/subaccount.
+      parameters:
+      - $ref: '#/components/parameters/AccountID'
+      - $ref: '#/components/parameters/SubAccountID'
+      - $ref: '#/components/parameters/VaultID'
+      - $ref: '#/components/parameters/Blockchain'
+      - $ref: '#/components/parameters/BlockchainAddress'
+      responses:
+        '200':
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioSummaryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+      operationId: getPortfolio
+      security:
+      - {}
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      - BearerAuth: []
+  /v2/positions:
+    get:
+      tags:
+      - Positions
+      summary: Get open positions
+      description: Returns active positions for the resolved account, including derived PnL, maintenance margin,
+        bankruptcy price, and liquidation price. Public account selectors do not require authentication; sub_account_id
+        and the no-selector caller context do. Selector precedence is account_id, vault_id, blockchain address,
+        then authenticated caller/subaccount.
+      parameters:
+      - name: symbol
+        in: query
+        required: false
+        description: Filter by trading pair symbol
+        schema:
+          type: string
+        example: BTC-USD
+      - name: position_id
+        in: query
+        required: false
+        description: Filter by position ID (requires `symbol`)
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+      - $ref: '#/components/parameters/AccountID'
+      - $ref: '#/components/parameters/SubAccountID'
+      - $ref: '#/components/parameters/VaultID'
+      - $ref: '#/components/parameters/Blockchain'
+      - $ref: '#/components/parameters/BlockchainAddress'
+      responses:
+        '200':
+          description: Open positions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PositionsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+      operationId: getPositions
+      security:
+      - {}
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      - BearerAuth: []
+  /v2/closedPositions:
+    get:
+      tags:
+      - Positions
+      summary: Get closed positions
+      description: Returns closed position rows for the resolved account, newest close first. Public account selectors
+        do not require authentication; sub_account_id and the no-selector caller context do. Selector precedence
+        is account_id, vault_id, blockchain address, then authenticated caller/subaccount.
+      parameters:
+      - name: symbol
+        in: query
+        required: false
+        description: Filter by trading pair symbol
+        schema:
+          type: string
+        example: BTC-USD
+      - name: startTime
+        in: query
+        required: false
+        description: Start time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: endTime
+        in: query
+        required: false
+        description: End time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return. Clamped to 1000.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+      - $ref: '#/components/parameters/AccountID'
+      - $ref: '#/components/parameters/SubAccountID'
+      - $ref: '#/components/parameters/VaultID'
+      - $ref: '#/components/parameters/Blockchain'
+      - $ref: '#/components/parameters/BlockchainAddress'
+      responses:
+        '200':
+          description: Closed positions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClosedPositionsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+      operationId: getClosedPositions
+      security:
+      - {}
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      - BearerAuth: []
+  /v2/history/order:
+    get:
+      tags:
+      - History
+      summary: Get order history
+      description: Returns persisted order history for the resolved account, newest first. Use fromOrderID for backward
+        cursor pagination. Public account selectors do not require authentication; sub_account_id and the no-selector
+        caller context do. Selector precedence is account_id, vault_id, blockchain address, then authenticated caller/subaccount.
+      parameters:
+      - name: symbol
+        in: query
+        required: false
+        description: Filter by trading pair symbol
+        schema:
+          type: string
+        example: BTC-USD
+      - name: side
+        in: query
+        required: false
+        description: Filter by order side
+        schema:
+          type: string
+          enum:
+          - buy
+          - sell
+        example: buy
+      - name: type
+        in: query
+        required: false
+        description: 'Filter by order type: `market`, `limit`, `stop`, `stop_limit`, `take_profit`, `take_profit_limit`,
+          `trailing_stop_market`
+
+          '
+        schema:
+          type: string
+          enum:
+          - market
+          - limit
+          - stop
+          - stop_limit
+          - take_profit
+          - take_profit_limit
+          - trailing_stop_market
+        example: limit
+      - name: status
+        in: query
+        required: false
+        description: 'Filter by order status integer: 1=pending, 2=open, 3=filled, 4=canceled, 5=untriggered, 6=rejected,
+          7=expired.'
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 7
+      - name: order_id
+        in: query
+        required: false
+        description: Filter by specific order ID
+        schema:
+          type: integer
+          format: int64
+      - name: source
+        in: query
+        required: false
+        description: Filter orders created by the specified internal strategy service.
+        schema:
+          type: string
+          enum:
+          - twap
+          - grid
+          - copy
+        example: twap
+      - name: startTime
+        in: query
+        required: false
+        description: Start time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: endTime
+        in: query
+        required: false
+        description: End time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results. Clamped to 1000.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+      - name: fromOrderID
+        in: query
+        required: false
+        description: 'Backward cursor: return orders with ID less than this value, newest first.'
+        schema:
+          type: integer
+          format: int64
+      - $ref: '#/components/parameters/AccountID'
+      - $ref: '#/components/parameters/SubAccountID'
+      - $ref: '#/components/parameters/VaultID'
+      - $ref: '#/components/parameters/Blockchain'
+      - $ref: '#/components/parameters/BlockchainAddress'
+      responses:
+        '200':
+          description: Order history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderHistoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+      operationId: getOrderHistory
+      security:
+      - {}
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      - BearerAuth: []
+  /v2/history/fill:
+    get:
+      tags:
+      - History
+      summary: Get fill history
+      description: Returns trade fills for the resolved account. fromId pages backward in descending time order;
+        since_trade_id polls forward in ascending trade_id order. The two cursors cannot be combined. Public account
+        selectors do not require authentication; sub_account_id and the no-selector caller context do. Selector
+        precedence is account_id, vault_id, blockchain address, then authenticated caller/subaccount.
+      parameters:
+      - name: symbol
+        in: query
+        required: false
+        description: Filter by trading pair symbol
+        schema:
+          type: string
+        example: BTC-USD
+      - name: side
+        in: query
+        required: false
+        description: Filter by trade side
+        schema:
+          type: string
+          enum:
+          - buy
+          - sell
+        example: buy
+      - name: role
+        in: query
+        required: false
+        description: Filter by fill role (maker or taker)
+        schema:
+          type: string
+          enum:
+          - maker
+          - taker
+        example: maker
+      - name: auto_close_type
+        in: query
+        required: false
+        description: Filter by the associated order's auto-close reason. Use an empty value for regular fills; omit
+          the parameter to include all fills.
+        schema:
+          type: string
+          enum:
+          - ''
+          - liquidation
+          - adl
+          - bankrupt
+          - if_transfer
+          - vault_withdrawal
+        example: liquidation
+      - name: order_id
+        in: query
+        required: false
+        description: Filter fills for a specific order
+        schema:
+          type: integer
+          format: int64
+      - name: source
+        in: query
+        required: false
+        description: Filter fills from orders created by the specified internal strategy service.
+        schema:
+          type: string
+          enum:
+          - twap
+          - grid
+          - copy
+        example: twap
+      - name: startTime
+        in: query
+        required: false
+        description: Start time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: endTime
+        in: query
+        required: false
+        description: End time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results. Clamped to 1000.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 500
+      - name: fromId
+        in: query
+        required: false
+        description: Backward pagination cursor — return fills with internal ID less than this value (newest first)
+        schema:
+          type: integer
+          format: int64
+      - name: since_trade_id
+        in: query
+        required: false
+        description: Forward cursor — return fills with trade_id greater than this value, ordered ascending. Use
+          for polling new fills. Cannot be combined with fromId.
+        schema:
+          type: integer
+          format: int64
+      - $ref: '#/components/parameters/AccountID'
+      - $ref: '#/components/parameters/SubAccountID'
+      - $ref: '#/components/parameters/VaultID'
+      - $ref: '#/components/parameters/Blockchain'
+      - $ref: '#/components/parameters/BlockchainAddress'
+      responses:
+        '200':
+          description: Fill history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FillHistoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+      operationId: getFillHistory
+      security:
+      - {}
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      - BearerAuth: []
+  /v2/history/funding:
+    get:
+      tags:
+      - History
+      summary: Get funding payment history
+      description: Returns funding payments for the resolved account, newest ID first. Positive amount means received;
+        negative amount means paid. Public account selectors do not require authentication; sub_account_id and the
+        no-selector caller context do. Selector precedence is account_id, vault_id, blockchain address, then authenticated
+        caller/subaccount.
+      parameters:
+      - name: symbol
+        in: query
+        required: false
+        description: Filter by trading pair symbol
+        schema:
+          type: string
+        example: BTC-USD
+      - name: position_side
+        in: query
+        required: false
+        description: 'Filter by position side at the time of funding payment. Case-sensitive: `Long` or `Short`.
+
+          '
+        schema:
+          type: string
+          enum:
+          - Long
+          - Short
+        example: Long
+      - name: startTime
+        in: query
+        required: false
+        description: Start time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: endTime
+        in: query
+        required: false
+        description: End time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results. Clamped to 1000.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 500
+      - name: fromId
+        in: query
+        required: false
+        description: 'Backward cursor: return rows with ID less than this value, ordered by ID descending.'
+        schema:
+          type: integer
+          format: int64
+      - $ref: '#/components/parameters/AccountID'
+      - $ref: '#/components/parameters/SubAccountID'
+      - $ref: '#/components/parameters/VaultID'
+      - $ref: '#/components/parameters/Blockchain'
+      - $ref: '#/components/parameters/BlockchainAddress'
+      responses:
+        '200':
+          description: Funding payment history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundingHistoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+      operationId: getFundingHistory
+      security:
+      - {}
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      - BearerAuth: []
+  /v2/history/transaction:
+    get:
+      tags:
+      - History
+      summary: Get transaction history
+      description: Returns deposits, withdrawals, fees, realized PnL, liquidations, funding, rewards, credit, and
+        internal transfers for the resolved account, newest first. Public account selectors do not require authentication;
+        sub_account_id and the no-selector caller context do. Selector precedence is account_id, vault_id, blockchain
+        address, then authenticated caller/subaccount.
+      parameters:
+      - name: type
+        in: query
+        required: false
+        description: Filter by transaction type. Accepts repeated parameters or comma-separated integers/strings.
+          1=deposit, 2=withdraw, 3=fee, 4=realized_pnl, 5=liquidation, 6=funding, 7=reward_grant, 8=reward_reclaim,
+          9=credit, 10=transfer.
+        schema:
+          type: string
+        example: 1,2
+      - name: status
+        in: query
+        required: false
+        description: 'Filter by status (integer enum): `1` = pending, `2` = completed, `3` = pending_settlement,
+          `4` = settled, `5` = failed, `6` = cancelled
+
+          '
+        schema:
+          type: integer
+      - name: startTime
+        in: query
+        required: false
+        description: Start time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: endTime
+        in: query
+        required: false
+        description: End time filter (Unix ms)
+        schema:
+          type: integer
+          format: int64
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results. Clamped to 1000.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+      - name: fromId
+        in: query
+        required: false
+        description: 'Backward cursor: return rows with ID less than this value, newest first.'
+        schema:
+          type: integer
+          format: int64
+      - $ref: '#/components/parameters/AccountID'
+      - $ref: '#/components/parameters/SubAccountID'
+      - $ref: '#/components/parameters/VaultID'
+      - $ref: '#/components/parameters/Blockchain'
+      - $ref: '#/components/parameters/BlockchainAddress'
+      responses:
+        '200':
+          description: Transaction history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionHistoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+      operationId: getTransactionHistory
+      security:
+      - {}
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      - BearerAuth: []
+  /v2/sub-accounts:
+    get:
+      tags:
+      - Subaccounts
+      summary: List subaccounts
+      description: Lists the authenticated master account's pending and active subaccounts, including current equity,
+        available balance, PnL, and margin-used percentage. API-wallet traders can use the returned account_id as
+        sub_account_id on supported trading and read endpoints.
+      operationId: listSubAccounts
+      security:
+      - ApiWalletAuth: []
+        ApiWalletSignature: []
+        ApiWalletTimestamp: []
+        ApiWalletNonce: []
+      responses:
+        '200':
+          description: Subaccounts owned by the authenticated master account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubAccountsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
