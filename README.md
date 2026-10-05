@@ -54,7 +54,7 @@ The author shares a referral code (`BenRyan`). If your account has **no** referr
 share of those fees. It's optional: say no and you'll never be asked again, and everything works the same.
 If you say yes, you apply it yourself in one of two ways: open
 [app.strikefinance.org/trade/BTC?referralCode=BenRyan](https://app.strikefinance.org/trade/BTC?referralCode=BenRyan)
-with your wallet connected, or enter `BenRyan` on the Referrals page. The tool can't set a referral code itself
+while logged in to Strike, or enter `BenRyan` on the Referrals page. The tool can't set a referral code itself
 (Strike only allows that in the app), and it never touches a code you already have.
 
 More trading volume also helps the author's referral tier. So whenever the recommended copy mode trades more volume
@@ -107,7 +107,7 @@ The tool talks to Strike through an **API key**, a pair of keys made on your own
 
 What happens:
 1. Claude runs `python3 scripts/strike_api.py keygen` and shows you the public key.
-2. Open [app.strikefinance.org/api-keys](https://app.strikefinance.org/api-keys) with your wallet connected.
+2. Open [app.strikefinance.org/api-keys](https://app.strikefinance.org/api-keys) while logged in to Strike (wallet or email login both work).
 3. Add a new key, paste the public key, choose an expiry date, and save.
    <!-- screenshot: Strike API keys page with the add-key form -->
 4. Tell Claude "done". It checks the key works (`strike_api.py whoami`).
@@ -127,17 +127,17 @@ yourself, and caps the damage if something goes wrong.
 
 ## 6. Your first review
 
-After the key, Claude asks a few questions. Each one changes the recommendations:
+After the key, Claude asks a few multiple-choice questions (pick an answer, or choose "Other" to type your own). Each one changes the recommendations:
 
 | Question | Why it matters | Typical answer |
 |---|---|---|
 | How much will you fund the copy account with? | Sizes every trade and cap | $500 – $5,000 |
 | What leverage on every market? | Higher means liquidations come sooner | 10x |
 | How much of the balance in open copies at once, at most? | Becomes your total cap | Half |
-| How big a drop from the peak could you sit through? | Traders who dropped further in replays get flagged | 20–25% |
+| If the account dipped from its high, how big a dip could you sit through? | Traders who dipped further in replays get flagged | 20% |
 | Any markets to never copy? | Thin or meme markets slip more | e.g. PUMP-USD |
 | Preferred copy mode? | Breaks ties your way | No preference |
-| Which day each week to review? | Your review reminder | Monday |
+| Which day each week to review? | Your weekly check-in | Monday |
 
 Your answers are saved in `profile.json` in this folder (only on your computer). Change them any time:
 "change my balance to $2,000".

@@ -16,7 +16,7 @@ Go one step at a time. Wait for the user after each step. Plain English.
 1. Say: "I'll make a key on your computer. Only the public half goes to Strike; the private half stays in a hidden
    file here and is never shown, even to me."
 2. Run `python3 scripts/strike_api.py keygen` and show only the PUBLIC key line.
-3. Tell them: open app.strikefinance.org/api-keys with their wallet connected, add a key, paste the public key,
+3. Tell them: open app.strikefinance.org/api-keys while logged in to Strike (wallet or email), add a key, paste the public key,
    and pick an expiry. Mention: the key can trade and change settings but **cannot withdraw funds**.
 4. Wait for "done". Then `python3 scripts/strike_api.py whoami`. If refused, check they pasted the public key and saved it.
 
@@ -34,27 +34,46 @@ Skip this step if `profile.json` has `referral_asked` set. Otherwise run `python
   {author_code_discount_pct}% discount on your trading fees? (BenRyan is the repo author's code; the author gets a share of the
   fees. It's optional and the tool works the same either way.)"
   - Yes: two ways, offer both:
-    1. Open the `link` (https://app.strikefinance.org/trade/BTC?referralCode=BenRyan) with their wallet connected and accept the code.
+    1. Open the `link` (https://app.strikefinance.org/trade/BTC?referralCode=BenRyan) while logged in to Strike and accept the code.
     2. Or go to the Referrals page (`manual_page`) and enter `BenRyan` (capital B and R) by hand.
     Then rerun `referral.py` to confirm the discount shows.
   - No: say "No problem" and never bring it up again.
   Either way, record it: `python3 scripts/profile.py set referral_asked=yes` (or `=no`).
 This repo cannot set a code: Strike only allows it in the app.
 
-## 5. Profile questions (ask one or two at a time, explain why each matters)
-1. **Balance**: "How much will you fund the copy account with (USD)?" -> sizes every recommendation.
-2. **Leverage**: "What leverage do you want on every market? 10x is a common middle ground: each copy's margin is a
-   tenth of its size." Explain higher = closer liquidations. Default 10.
-3. **Max in use**: "At most, how much of the balance should be in open copies at once? Half is a sensible start."
-   -> becomes the total cap. Default 0.5.
-4. **Drawdown limit**: "How big a drop from the account's peak could you sit through without stopping? e.g. 20%."
-   -> leads that went deeper in replays get flagged. Default 0.25.
-5. **Excluded markets**: "Any markets you never want copied?" (e.g. PUMP-USD; thin or meme markets). Default none.
-6. **Mode preference**: fixed margin, fixed ratio, or no preference ("either"). Explain in one line each:
-   fixed margin = same $ margin on every copied entry; fixed ratio = copies scale with the lead's size relative to their account.
-7. **Review day**: which day each week to review. Default Monday.
+## 5. Profile questions (multiple choice)
+Ask with the AskUserQuestion tool so the user picks an answer instead of typing. "Other" is added automatically for
+anything else. Put the suggested option first with "(Recommended)" in its label, and give every option a one-line
+description of what it means for them. Two rounds:
+
+**Round 1** (one AskUserQuestion call, four questions):
+1. Balance, header "Balance": "How much will you fund the copy account with?" Options: $500, $1,000, $5,000, $10,000
+   (no recommendation; "Other" covers any amount). Description: sizes every suggestion.
+2. Leverage, header "Leverage": "What leverage should every market use?" Options: 10x (Recommended): each copy ties up
+   a tenth of its size as margin; 5x: further from liquidation, needs twice the margin; 3x: very conservative;
+   20x: liquidation comes much sooner.
+3. Max in use, header "Max in use": "At most, how much of the balance should be in open copies at once?" Options:
+   50% (Recommended): half stays free as a buffer; 25%: very cautious, fewer copies fit; 75%: more copies fit,
+   less buffer. Becomes the total cap.
+4. Dip limit, header "Max dip": "If the account dipped from its high, how big a dip could you sit through
+   without wanting to stop?" Options: 20% (Recommended); 15%: only the calmest traders; 25%: a wider choice;
+   30%: for bigger swings. Explain the limit only decides which traders get flagged.
+
+**Round 2** (one call, three questions):
+5. Excluded markets, header "Exclude", multiSelect: "Any markets you never want copied?" Options: None (Recommended
+   if unsure); PUMP-USD: meme coin, very jumpy; NIGHT-USD: thin market, copies slip more; Stocks and commodities:
+   every equity/metal/oil market (expand to the Strike symbols whose Hyperliquid twin starts with `xyz:`, from data/markets.json).
+6. Copy mode, header "Mode": "Which copy mode do you prefer?" Options: Either (Recommended): I compare both for each
+   trader and pick by profit per $ of drawdown; Fixed margin: same $ margin on every copied trade; Fixed ratio:
+   copies scale with the trader's trade size relative to their account.
+7. Review day, header "Review day": "Which day each week should we review your account? I'll go over your copies,
+   profit and loss, and how each trader is doing." Options: Monday (Recommended), Friday, Saturday, Sunday.
+
+If the user asks what you recommend, give the recommended options and the reason in one line each. If they pick
+"Other", accept any sensible value; ask again only if it can't be used (e.g. a share above 100%).
 Save: `python3 scripts/profile.py set balance=... leverage=... max_use=... max_dd=... excluded=... mode_pref=... review_day=... [sub_account_id=...]`
-Then `python3 scripts/profile.py show` (also prints their fee).
+(max_use and max_dd as shares, e.g. 0.5 and 0.2; mode_pref = either | fixed_margin | fixed_ratio).
+Then `python3 scripts/profile.py show` and show the saved settings as a short table, plus their fee.
 
 ## 6. Next
 Offer: "Want me to run a full sweep for traders that fit your account? It takes 20-30 minutes." -> `sweep` skill.

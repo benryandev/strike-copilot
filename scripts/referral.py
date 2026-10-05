@@ -3,14 +3,14 @@
   python3 scripts/referral.py            uses the account id in profile.json
   python3 scripts/referral.py <account_id>
 
-This never changes anything. Strike only lets you link a code yourself, in the app with your wallet connected
+This never changes anything. Strike only lets you link a code yourself, in the app while logged in
 (the API key can't do it). If you already have a code, this tool leaves it alone.
 """
 import sys, json
 from common import get, load_profile
 
 CODE = 'BenRyan'  # the repo author's code (case-sensitive). Using it is optional; the author earns a share of the fees it discounts.
-LINK = f'https://app.strikefinance.org/trade/BTC?referralCode={CODE}'  # opening this with your wallet connected offers the code
+LINK = f'https://app.strikefinance.org/trade/BTC?referralCode={CODE}'  # opening this while logged in offers the code
 MANUAL = 'https://app.strikefinance.org/referrals'  # or type the code in on the Referrals page
 
 
