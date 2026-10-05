@@ -8,9 +8,12 @@ description: Set up a copy subscription the user has chosen: lock leverage and t
 Needs: a chosen lead and the settings from `compare.py` (`data/compare/<lead>.json`). If there's none, run
 `check-trader` first. Never subscribe on a weekend just to "get in" quickly, or to win back a loss.
 
-Ask: "Shall I set this up through the API, or would you rather do it yourself in the app? I'll give you the steps."
+Ask with AskUserQuestion (header "How"): "How would you like to set this up?" Options:
+"Through the API": I make each change, showing it first and asking before each one; "Myself in the app": you get
+numbered steps with your exact numbers. No "(Recommended)" here: both are fine.
 
-## A. Through the API (every step: dry run, explain, wait for yes, then --yes)
+## A. Through the API (every step: dry run, explain, change menu from CLAUDE.md rule 4, then --yes)
+Tell the user up front how many changes there are (e.g. 4) and number each menu "Change 1/4" and so on.
 1. Lock leverage and margin mode (`margin_mode` in profile.json, isolated by default) on the lead's markets (from the compare output, minus excluded ones):
    `python3 scripts/strike_api.py set-margin-mode <isolated|cross> BTC-USD,ETH-USD,... [sub=<id>]` then
    `python3 scripts/strike_api.py set-leverage <lev> BTC-USD,ETH-USD,... [sub=<id>]`.
@@ -24,6 +27,8 @@ Ask: "Shall I set this up through the API, or would you rather do it yourself in
    copy amount vs balance, and the lead's copier slots before retrying; don't retry blindly.
 3. Set the total cap straight after with the new subscription id:
    `python3 scripts/strike_api.py caps <subscription_id> <per_symbol> <total> exclude=... [sub=<id>]`
+   If the user skips a step, say what that means (e.g. skipping leverage: copies would use Strike's default leverage
+   on those markets) and carry on; skipping the subscribe ends the setup.
 4. Confirm with `python3 scripts/account.py` and read back mode, size, caps and exclusions.
 
 ## B. Manually in the app

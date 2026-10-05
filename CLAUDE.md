@@ -22,7 +22,14 @@ without a one-line explanation. Never assume their answers: ask.
 3. **No orders.** This repo never places, changes or cancels the user's own orders, withdraws, or transfers.
    `strike_api.py` only wires: account reads, leverage, margin mode, copy subscribe, caps, stop.
 4. **Every change needs a yes.** Before any `strike_api.py` write, show the exact dry-run output (run it without
-   `--yes`), explain it in one line, and only add `--yes` after the user says yes to that specific change.
+   `--yes`), explain it in one line, then ask with the AskUserQuestion tool (the "change menu" below). Only add
+   `--yes` after the user picks "Make this change" for that specific change.
+   **Change menu** (single choice, header "Change N/M"): "Make this change" / "Skip this one" / "Explain more" /
+   "Stop setting up". Never mark any option "(Recommended)" on a change that touches the account: the choice is
+   the user's. "Explain more" answers, then shows the same menu again. Stopping a copy uses its own menu (see rule 4b).
+4b. **Stopping a copy** always asks (AskUserQuestion, header "Open trades"): "Close the copied positions now" (sold
+   at market, gains or losses become final) / "Keep them open" (they stay as positions you manage yourself) /
+   "Don't stop the copy".
    Stopping a copy: always ask "close" (sell the copied positions now) or "keep" (leave them open, managed by you).
 5. **Never trust Strike's copy score, ROI or "copyable share" alone.** They include spot trading and count markets
    by listing, not liquidity. Recommend a lead only after `lead.py` passes and `compare.py` has run.

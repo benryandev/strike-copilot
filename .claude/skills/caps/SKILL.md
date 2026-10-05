@@ -17,6 +17,6 @@ closes always go through. Caps are checked on margin at entry.
    change nothing in the past, so they're guards against the lead changing behaviour; caps that bind often cut
    both losses and winners. A useful starting point: per-symbol near the lead's own biggest single-market
    position in the replay, total around 1.5x the peak margin used, and never above balance x max_use.
-4. Apply only on a yes: `python3 scripts/strike_api.py caps <subscription_id> <per_symbol> <total> [exclude=...] [sub=<id>]`
+4. Apply only via the change menu (CLAUDE.md rule 4): `python3 scripts/strike_api.py caps <subscription_id> <per_symbol> <total> [exclude=...] [sub=<id>]`
    (dry run first). Or give manual steps: Copy Trading -> your subscription -> Edit -> Advanced settings.
 5. End with the not-financial-advice line.
