@@ -57,8 +57,8 @@ If you say yes, you apply it yourself in one of two ways: open
 with your wallet connected, or enter `BenRyan` on the Referrals page. The tool can't set a referral code itself
 (Strike only allows that in the app), and it never touches a code you already have.
 
-When the two copy modes come out about even, the tool leans to fixed ratio and says why: fixed ratio also trades
-more volume, which helps the author's referral tier. When one mode is clearly better, that's the one recommended.
+More trading volume also helps the author's referral tier. So whenever the recommended copy mode trades more volume
+than the other one, the result says so, with both volumes. The choice itself follows the rule in section 7.
 
 ## 3. What you need
 
@@ -153,11 +153,11 @@ For each shortlisted trader you get a table like this (example numbers):
   window   mode               net    lowest       max drop   margin used    fees     volume  skipped
   90d      FM $55          +1,709       861     -327 (-33%)          574      54    107,480  -
   90d      FR $1,000         +422       964     -107 (-11%)          175      12     24,581  1 tiny
-           -> trade-off
+           -> fixed margin: more profit per $ of drawdown (5.2 vs 3.9)
   30d      FM $55            +498       941     -262 (-26%)          574      11     22,498  -
   30d      FR $1,000          +66       983      -35 ( -3%)          118       2      3,315  -
-           -> trade-off
-  VERDICT: TRADE-OFF -> one made more, the other dropped less.
+           -> fixed ratio: profit per $ of drawdown about even (1.9 vs 1.9): smaller drawdown wins
+  VERDICT: FIXED MARGIN -> 90d: more profit per $ of drawdown (5.2 vs 3.9); 30d: profit per $ of drawdown about even ...
 ```
 
 - **FM / fixed margin**: every trade the lead opens is copied with the same dollar margin (here $55).
@@ -167,11 +167,14 @@ For each shortlisted trader you get a table like this (example numbers):
 - **margin used**: the most money tied up in open copies at once.
 - **skipped**: copies that wouldn't have happened (cap reached, below Strike's minimum order, not enough free margin).
 
-**Verdicts:**
-- **Fixed margin** or **fixed ratio**: in both periods, that mode was at least as good on *both* profit and biggest
-  drop (within about 10%), and clearly better on one of them.
-- **About even**: within about 10% on both profit and biggest drop. Leans to fixed ratio (see [Disclosure](#2-disclosure)).
-- **Trade-off**: one made more, the other dropped less. You choose: more return, or a smoother ride.
+**How the mode is chosen:** both modes are scored on **profit per dollar of drawdown** (net profit divided by the
+biggest drop). A smaller drop compounds better: a mode with half the drop and half the profit can be sized up to
+match the other, while a deep drop is hard to recover from and hard to sit through.
+- The mode with clearly more profit per dollar of drawdown wins.
+- If they're within 10% of each other, the one with the **smaller drawdown** wins.
+- A clear win in one period beats a tie in the other. If the 90-day and 30-day results clearly pick different modes,
+  the smaller 90-day drawdown wins, and the result tells you the periods disagreed.
+- If only one mode made money, it wins. If both lost money in either period, neither is recommended.
 
 Every recommendation also lists the **settings**: margin per entry (or copy amount), how many entries the trader
 tends to hold at once, caps, excluded markets, and the leverage to lock on their markets **before** you start.

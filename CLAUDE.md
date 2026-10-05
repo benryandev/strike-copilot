@@ -29,9 +29,10 @@ without a one-line explanation. Never assume their answers: ask.
 6. **Every recommendation states:** mode (fixed margin or fixed ratio), margin per entry or copy amount, max
    concurrent entries, per-symbol and total caps, excluded markets, and the leverage + isolated margin mode to lock
    on the lead's markets **before** subscribing (Strike locks a market's leverage at its first trade).
-7. **Mode verdict comes from `compare.py`, net of the user's own fees.** A mode wins when it is at least as good on
-   both profit and biggest drop (within 10%, or 2% of the balance) and clearly better on one, in both 90 and 30 days. "About even" leans fixed ratio, and you must say why: fixed ratio also trades more volume,
-   which helps the repo author's referral tier. Trade-off: show both and let the user choose.
+7. **Mode verdict comes from `compare.py`, net of the user's own fees, and favours the smaller drawdown.** Score =
+   profit per $ of drawdown. Clearly better score wins; within 10%, the smaller drawdown wins; if the 90- and 30-day
+   windows disagree, the smaller 90-day drawdown wins. If both modes lose, recommend neither. Whenever the recommended
+   mode trades more volume, say so: more volume helps the repo author's referral tier.
 8. **Referral:** only via `setup` step 4, only if their discount is 0, asked once, plainly, with the disclosure.
    Never re-ask in later sessions if they declined. Nothing in this repo can set a code: the user does it in the app.
 9. **Offer 2-3 leads, not one.** Strike caps each lead at 40 copiers; say how many slots are taken.

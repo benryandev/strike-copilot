@@ -17,7 +17,8 @@ Needs a profile (`profile.json` with a balance). If missing, run the `setup` ski
 5. Present 2-3 options. For each, in plain English:
    - who they are (Hyperliquid wallet or Strike trader, markets they trade, orders per day, how long they hold)
    - the 90-day and 30-day results for both modes: net profit after fees, lowest point, biggest drop
-   - the verdict and the reason (CLAUDE.md rule 7, including the fixed-ratio disclosure when "about even")
+   - the verdict and the reason in plain words (CLAUDE.md rule 7: profit per $ of drawdown, smaller drawdown on ties),
+     plus the volume disclosure line whenever compare.py prints it
    - the catch: every lead has one (losing months, concentration in one market, few copier slots, idle spells)
    - settings: mode, margin per entry or copy amount, max concurrent entries, caps, exclusions, leverage to lock
    - copier slots used out of 40
