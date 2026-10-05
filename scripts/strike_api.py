@@ -113,7 +113,7 @@ def main(a):
         if kv.get('exclude'): body['excluded_symbols'] = [x for x in kv['exclude'].upper().split(',') if x]
         if sub: body['sub_account_id'] = sub
         if body['copy_mode'] == 'fixed_ratio':
-            # Strike reserves a fixed-ratio copy amount from the available balance; a bigger amount is refused ("invalid inputs").
+            # Strike refuses a copy larger than the current balance ("invalid inputs"; confirmed 2026-10-05).
             acct = request('GET', '/v2/account' + (f'?sub_account_id={sub}' if sub else ''))
             avail = float(acct.get('available_balance') or 0) if isinstance(acct, dict) else 0.0
             if float(kv['ratio']) > avail:
