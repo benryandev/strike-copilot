@@ -112,8 +112,19 @@ def main(a):
         if kv.get('cap'): body['max_margin_per_symbol'] = str(kv['cap'])
         if kv.get('exclude'): body['excluded_symbols'] = [x for x in kv['exclude'].upper().split(',') if x]
         if sub: body['sub_account_id'] = sub
-        _send('POST', '/v2/copy/subscribe', body, yes)
-        if yes: print('\nThe total cap is not part of subscribing. Set it now with: caps <subscription_id> <per_symbol> <total>')
+        if body['copy_mode'] == 'fixed_ratio':
+            # Strike reserves a fixed-ratio copy amount from the available balance; a bigger amount is refused ("invalid inputs").
+            acct = request('GET', '/v2/account' + (f'?sub_account_id={sub}' if sub else ''))
+            avail = float(acct.get('available_balance') or 0) if isinstance(acct, dict) else 0.0
+            if float(kv['ratio']) > avail:
+                sys.exit(f"Not sent: a fixed-ratio copy amount is reserved from your available balance, and ${float(kv['ratio']):,.2f} is more than "
+                         f"the ${avail:,.2f} available. Fund the account first, or use a copy amount up to ${avail:,.2f}.")
+        r = _send('POST', '/v2/copy/subscribe', body, yes)
+        if isinstance(r, dict) and r.get('subscription_id'):
+            print(f"\nSubscribed: {r['subscription_id']}. The total cap is not part of subscribing; set it now with:\n"
+                  f"  python3 scripts/strike_api.py caps {r['subscription_id']} <per_symbol> <total>" + (f' sub={sub}' if sub else ''))
+        elif yes:
+            print('\nStrike refused it, so no subscription was created (nothing to stop or cap).')
     elif cmd == 'caps':
         # max_margin_total is not in the spec; the field name comes from Strike's app, which sends both caps on every edit.
         body = {'max_margin_per_symbol': str(pos[1]), 'max_margin_total': str(pos[2])}

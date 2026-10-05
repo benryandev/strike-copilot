@@ -19,6 +19,9 @@ Ask: "Shall I set this up through the API, or would you rather do it yourself in
    - fixed margin: `python3 scripts/strike_api.py subscribe <lead> margin=<usd> cap=<usd> exclude=A-USD,B-USD [sub=<id>]`
    - fixed ratio: `python3 scripts/strike_api.py subscribe <lead> ratio=<usd> cap=<usd> exclude=... [sub=<id>]`
    New copies start with the lead's next trade: their positions already open aren't copied.
+   The account must be funded first. A fixed-ratio copy amount is reserved from the available balance and can't exceed
+   it (strike_api.py refuses before sending). If Strike still answers "invalid inputs", check the balance, the
+   copy amount vs balance, and the lead's copier slots before retrying; don't retry blindly.
 3. Set the total cap straight after with the new subscription id:
    `python3 scripts/strike_api.py caps <subscription_id> <per_symbol> <total> exclude=... [sub=<id>]`
 4. Confirm with `python3 scripts/account.py` and read back mode, size, caps and exclusions.
