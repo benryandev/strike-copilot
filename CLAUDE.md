@@ -67,6 +67,9 @@ without a one-line explanation. Never assume their answers: ask.
   ratio is tiny; if the lead withdraws, every later copy gets bigger.
 - Fixed margin opens one entry per lead order, so a lead who adds often stacks many entries: margin per entry x
   max concurrent entries must fit the budget.
+- Stopping a copy in the Strike app ("Close subscription") always closes the copied positions at market and does
+  NOT cancel resting copied orders. Only the API can keep positions open; `strike_api.py stop` also cancels open
+  copied orders (`cancel_open_orders=true`). Say which applies when the user stops a copy.
 - Both caps can be set when subscribing (`tcap=`); `caps` changes them later. A copy can't be larger than the available
   balance (Strike refuses it, both modes). Fixed ratio also has Minimum entry and Ratio multiplier (see apply-copy).
 - Codes are case-sensitive: the author's referral code is `BenRyan`.
