@@ -28,12 +28,14 @@ def main(lead):
                    ('Never wiped out', S.wipes(h) == 0, f"{S.wipes(h)} wipe-outs"),
                    ('Profit comes from perps, not spot (this month)', perpM >= 0.7, f'{perpM * 100:.0f}% perps')]
         fills = hl_fills(a, S.T90, NOW); to_sym = hl_map(mk)
-        tot = sum(F(x['closedPnl']) for x in fills if not x['coin'].startswith('@')); lst = sum(F(x['closedPnl']) for x in fills if x['coin'] in to_sym)
+        tot = sum(F(x['closedPnl']) for x in fills if not x['coin'].startswith('@')); ex = set(p['excluded']); lst = sum(F(x['closedPnl']) for x in fills if x['coin'] in to_sym and to_sym[x['coin']] not in ex)
         share = lst / tot if tot > 0 else 0; orders = hl_to_orders(fills, mk)
         ms = st['marginSummary']; av = F(ms['accountValue'])
         live = f"perp account ${av:,.0f}, {F(ms['totalNtlPos']) / av if av else 0:.1f}x leverage overall, {len(st['assetPositions'])} positions"
     else:
-        fills = strike_fills(lead, since=S.T90, pages=30); orders = strike_to_orders(fills, S.T90, NOW, mk); share = 1.0
+        ex = set(p['excluded']); fills = strike_fills(lead, since=S.T90, pages=30); orders = strike_to_orders(fills, S.T90, NOW, mk)
+        own_pnl = [(f['symbol'], F(f['realized_pnl']) - F(f['fee'])) for f in fills if not (f.get('client_order_id') or '').startswith('copy:')]
+        tot = sum(v for _, v in own_pnl); share = sum(v for s, v in own_pnl if s not in ex) / tot if tot > 0 else 0
         if fills and fills[0]['timestamp'] > S.T90 + DAY:
             print(f"Very active account: only the last {(NOW - fills[0]['timestamp']) / DAY:.1f} days of fills were read (30,000 fills). "
                   "Accounts trading this often are usually bots whose edge is too thin to copy.")
@@ -43,8 +45,8 @@ def main(lead):
         checks += [('On Strike for at least 14 days', age >= 14, f'{age:.0f} days'), ('Never wiped out', S.wipes(h) == 0, f'{S.wipes(h)} wipe-outs'),
                    ('Trades their own ideas (not mostly copying others)', len(own) >= 0.5 * len(fills) if fills else False, f'{len(own)} of {len(fills)} fills their own')]
         live = f"{len(get(f'/v2/positions?account_id={lead}').get('positions') or [])} open positions"
-    m = S.metrics(orders, fee); budget = F(p.get('balance') or 1000) * F(p['max_use']); fit = budget / max(m['sim90']['entries'], 1)
-    checks += [('>=70% of realised profit on markets Strike lists', share >= 0.7, f'{share * 100:.0f}%'),
+    m = S.metrics(orders, fee, ex); budget = F(p.get('balance') or 1000) * F(p['max_use']); fit = budget / max(m['sim90']['entries'], 1)
+    checks += [('>=70% of realised profit on markets you can copy (Strike-listed, not excluded)', share >= 0.7, f'{share * 100:.0f}%'),
                ('At least 20 round trips in 90 days', m['sim90']['trips'] >= 20, f"{m['sim90']['trips']} trips, {m['sim90']['win'] * 100:.0f}% winners"),
                ('Edge survives copy costs (>=20 bp per $)', m['edge_bp'] >= 20, f"{m['edge_bp']:.0f} bp"),
                ('Copy profitable over 90 days', m['sim90']['net'] > 0, f"{m['sim90']['net']:+,.0f} at $200 per entry, max drop {m['sim90']['mdd']:+,.0f}"),

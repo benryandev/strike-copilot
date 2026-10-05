@@ -11,7 +11,7 @@ Funnel (each step is a lesson from copying for real, not a guess):
     Strike's copy score, ROI and "copyable share" are never trusted on their own: they include spot, and "copyable" counts listing, not liquidity.
  2. Hyperliquid account history: perp trading must be where the profit comes from (>=70% this month, >=50% all time),
     account at least 180 days old, perp account >= $20K, never wiped out (fell below 5% of a $10K+ peak).
- 3. Fills, last 90 days: >=70% of realised profit on markets Strike lists, >=20 round trips, lead edge >= 20 bp per $
+ 3. Fills, last 90 days, ignoring markets you excluded: >=70% of realised profit on markets Strike lists (and you copy), >=20 round trips, lead edge >= 20 bp per $
     (a copy round trip costs ~15 bp in fees and price gap), and a fixed-margin copy (with your fee) positive over both
     the last 90 and last 30 days.
  4. Fits your budget: margin per entry = (balance x max_use) / the most entries the lead held at once, at least $5.
@@ -128,7 +128,7 @@ def hl_universe():
     P('step 1 survivors', len(pre)); return pre
 
 
-def hl_stage(pre, fee, mk):
+def hl_stage(pre, fee, mk, ex=()):
     sa = OUT / 'hl_stageA.json'; A = json.loads(sa.read_text()) if sa.exists() else {}
     for i, r in enumerate(pre):
         if r['addr'] in A: continue
@@ -154,14 +154,14 @@ def hl_stage(pre, fee, mk):
             except RuntimeError: P(f"  {r['addr'][:10]} fills failed (rate limit), skipped"); continue
             fp.write_text(json.dumps(fills)); time.sleep(0.3)
         tot = sum(F(x['closedPnl']) for x in fills if not x['coin'].startswith('@'))
-        lst = sum(F(x['closedPnl']) for x in fills if x['coin'] in to_sym)
-        out.append(dict(r, platform='hyperliquid', listed_share=lst / tot if tot > 0 else 0, **metrics(hl_to_orders(fills, mk), fee)))
+        lst = sum(F(x['closedPnl']) for x in fills if x['coin'] in to_sym and to_sym[x['coin']] not in ex)  # profit on markets you'll copy
+        out.append(dict(r, platform='hyperliquid', listed_share=lst / tot if tot > 0 else 0, **metrics(hl_to_orders(fills, mk), fee, ex)))
         if i % 25 == 0: P(f'step 3: {i}/{len(surv)}')
     return out
 
 
 # ---------- Strike-native leads ----------
-def strike_stage(fee, mk):
+def strike_stage(fee, mk, ex=()):
     def pull():
         items, cur = {}, None
         for _ in range(60):
@@ -181,15 +181,18 @@ def strike_stage(fee, mk):
         else: fills = strike_fills(a, since=T90, pages=20); fp.write_text(json.dumps(fills))
         pf = get(f'/v2/portfolio?account_id={a}'); h = [(r[0], r[1]) for r in pf.get('history_perp_only', []) if F(r[1])]
         r = dict(addr=a, platform='strike', nickname=it.get('nickname'), eq=g(it, 'account_value'), pnl30=g(it, 'pnl', '30d'),
-                 ageDays=(NOW - h[0][0]) / DAY if h else 0, wipes=wipes(h), listed_share=1.0)
+                 ageDays=(NOW - h[0][0]) / DAY if h else 0, wipes=wipes(h))
+        own_pnl = [(f['symbol'], F(f['realized_pnl']) - F(f['fee'])) for f in fills if not (f.get('client_order_id') or '').startswith('copy:')]
+        tot = sum(v for _, v in own_pnl); r['listed_share'] = sum(v for s, v in own_pnl if s not in ex) / tot if tot > 0 else 0
         own = [f for f in fills if not (f.get('client_order_id') or '').startswith('copy:')]
-        out.append(dict(r, copy_share=1 - len(own) / len(fills) if fills else 0, **metrics(strike_to_orders(fills, T90, NOW, mk), fee)))
+        out.append(dict(r, copy_share=1 - len(own) / len(fills) if fills else 0, **metrics(strike_to_orders(fills, T90, NOW, mk), fee, ex)))
         if i % 25 == 0: P(f'Strike step 3: {i}/{len(pre)}')
         time.sleep(0.2)
     return out
 
 
-def metrics(orders, fee):
+def metrics(orders, fee, ex=()):
+    orders = [o for o in orders if o['c'] not in ex]  # judge the lead only on markets you'll actually copy
     s90, s30 = quick(orders, T90, fee), quick(orders, T30, fee)
     return dict(orders=len(orders), opd=len(orders) / 90, markets=sorted({o['c'] for o in orders}), edge_bp=lead_edge(orders, T90),
                 sim90=s90, sim30=s30)
@@ -230,8 +233,9 @@ if __name__ == '__main__':
         print(f'Sweep of {runs[-1].parent.name}'); show(shortlist(json.loads(runs[-1].with_name('all.json').read_text()), p)); sys.exit()
     (OUT / 'fills').mkdir(parents=True, exist_ok=True)
     fee = my_fee(); mk = markets(refresh=True)
-    P(f'sweep {OUT.name}, fee {fee * 100:.4f}%/side, {len(mk)} Strike markets')
-    rows = hl_stage(hl_universe(), fee, mk) + strike_stage(fee, mk)
+    P(f"sweep {OUT.name}, fee {fee * 100:.4f}%/side, {len(mk)} Strike markets, excluded: {', '.join(p['excluded']) or 'none'}")
+    ex = set(p['excluded'])
+    rows = hl_stage(hl_universe(), fee, mk, ex) + strike_stage(fee, mk, ex)
     (OUT / 'all.json').write_text(json.dumps(rows))
     top = shortlist(rows, p); (OUT / 'shortlist.json').write_text(json.dumps(top, indent=1))
     P(f'DONE: {len(rows)} leads checked in full, {len(top)} pass every check')
