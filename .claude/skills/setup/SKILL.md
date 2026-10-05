@@ -60,19 +60,24 @@ description of what it means for them. Two rounds:
    without wanting to stop?" Options: 20% (Recommended); 15%: only the calmest traders; 25%: a wider choice;
    30%: for bigger swings. Explain the limit only decides which traders get flagged.
 
-**Round 2** (one call, three questions):
+**Round 2** (one call, four questions):
 5. Excluded markets, header "Exclude", multiSelect: "Any markets you never want copied?" Options: None (Recommended
    if unsure); PUMP-USD: meme coin, very jumpy; NIGHT-USD: thin market, copies slip more; Stocks and commodities:
    every equity/metal/oil market (expand to the Strike symbols whose Hyperliquid twin starts with `xyz:`, from data/markets.json).
 6. Copy mode, header "Mode": "Which copy mode do you prefer?" Options: Either (Recommended): I compare both for each
    trader and pick by profit per $ of drawdown; Fixed margin: same $ margin on every copied trade; Fixed ratio:
    copies scale with the trader's trade size relative to their account.
-7. Review day, header "Review day": "Which day each week should we review your account? I'll go over your copies,
+7. Margin mode, header "Margin": "How should copied trades share your money?" Options:
+   Isolated (Recommended): each copied trade can only lose the margin put on it; a sharp move can liquidate one
+   position even if the trader (often on cross) rides it out. Cross: copied trades share the whole balance, so
+   single positions are liquidated less often, but one bad stretch can draw on the entire account, not just one
+   trade's margin. Explain: Strike sets this per market, and it's locked once a position is open there.
+8. Review day, header "Review day": "Which day each week should we review your account? I'll go over your copies,
    profit and loss, and how each trader is doing." Options: Monday (Recommended), Friday, Saturday, Sunday.
 
 If the user asks what you recommend, give the recommended options and the reason in one line each. If they pick
 "Other", accept any sensible value; ask again only if it can't be used (e.g. a share above 100%).
-Save: `python3 scripts/profile.py set balance=... leverage=... max_use=... max_dd=... excluded=... mode_pref=... review_day=... [sub_account_id=...]`
+Save: `python3 scripts/profile.py set balance=... leverage=... max_use=... max_dd=... excluded=... mode_pref=... margin_mode=... review_day=... [sub_account_id=...]`
 (max_use and max_dd as shares, e.g. 0.5 and 0.2; mode_pref = either | fixed_margin | fixed_ratio).
 Then `python3 scripts/profile.py show` and show the saved settings as a short table, plus their fee.
 

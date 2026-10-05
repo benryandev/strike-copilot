@@ -27,7 +27,7 @@ without a one-line explanation. Never assume their answers: ask.
 5. **Never trust Strike's copy score, ROI or "copyable share" alone.** They include spot trading and count markets
    by listing, not liquidity. Recommend a lead only after `lead.py` passes and `compare.py` has run.
 6. **Every recommendation states:** mode (fixed margin or fixed ratio), margin per entry or copy amount, max
-   concurrent entries, per-symbol and total caps, excluded markets, and the leverage + isolated margin mode to lock
+   concurrent entries, per-symbol and total caps, excluded markets, and the leverage + margin mode (profile `margin_mode`, isolated by default) to lock
    on the lead's markets **before** subscribing (Strike locks a market's leverage at its first trade).
 7. **Mode verdict comes from `compare.py`, net of the user's own fees, and favours the smaller drawdown.** Score =
    profit per $ of drawdown. Clearly better score wins; within 10%, the smaller drawdown wins; if the 90- and 30-day

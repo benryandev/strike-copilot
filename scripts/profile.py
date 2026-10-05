@@ -12,6 +12,7 @@ Fields:
   excluded     markets you never want copied, e.g. PUMP-USD
   sub_account_id  copy from this sub-account instead of the main account (recommended: keeps copying separate)
   mode_pref    fixed_margin | fixed_ratio | either
+  margin_mode  isolated (each copy risks only its own margin) | cross (copies share the balance)
   review_day   day of the week for your regular review
   referral_asked  yes/no once the optional referral question has been asked (it is never asked again)
 """
@@ -44,6 +45,7 @@ def main(a):
         elif v in ('', 'none', 'None'): v = None
         p[k] = v
     if p['max_use'] and not 0 < p['max_use'] <= 1: sys.exit('max_use is a share between 0 and 1, e.g. 0.5 for half')
+    if p['margin_mode'] not in ('isolated', 'cross'): sys.exit('margin_mode is isolated or cross')
     if p['max_dd'] and not 0 < p['max_dd'] <= 1: sys.exit('max_dd is a share between 0 and 1, e.g. 0.25 for 25%')
     save_profile(p); print(json.dumps(p, indent=1))
 

@@ -14,7 +14,8 @@ How it works (each rule matches observed Strike behaviour):
 - An open is skipped when free margin is short, it is below the market's minimum order, a cap would be breached, or the market is excluded.
 - Fees: your own taker fee per side (from your portfolio). Closes land 10 bp worse (copy-cost allowance).
 - Open copies are marked at Hyperliquid 1h candle closes between orders, so drawdown includes open losses.
-Not modelled: liquidations of individual isolated positions, funding payments.
+Not modelled: liquidations (isolated: one position's margin; cross: drawn from the shared balance), funding payments.
+So the replay is the same for both margin modes; the difference is how a liquidation would play out.
 """
 import sys, time, bisect, collections
 from common import F, DAY, SLIP, get, hl, now_ms, day, markets, hl_map, load_profile, my_fee

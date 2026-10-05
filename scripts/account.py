@@ -52,8 +52,9 @@ def main():
     liqs = [x for x in fills if x.get('auto_close_type') and x['timestamp'] > NOW - 7 * DAY]
     if liqs: flags.append(f"{len(liqs)} of your copies were force-closed ({', '.join(sorted({x['symbol'] + ' ' + x['auto_close_type'] for x in liqs}))}) in the last 7 days.")
 
-    print('\n== Leverage / margin mode (target: ' + f"{F(p['leverage']):.0f}x isolated) ==")
-    drift = [(s, st) for s, st in sorted((acct.get('symbol_settings') or {}).items()) if int(st['leverage']) != int(F(p['leverage'])) or st['margin_mode'] != 'isolated']
+    mm = p.get('margin_mode') or 'isolated'
+    print('\n== Leverage / margin mode (target: ' + f"{F(p['leverage']):.0f}x {mm}) ==")
+    drift = [(s, st) for s, st in sorted((acct.get('symbol_settings') or {}).items()) if int(st['leverage']) != int(F(p['leverage'])) or st['margin_mode'] != mm]
     open_syms = {x['symbol'] for x in pos}
     for s, st in drift:
         print(f"  {s}: {st['margin_mode']} {st['leverage']}x" + (' (locked by an open position; fix when flat)' if s in open_syms else ' -> fix: strike_api.py set-leverage / set-margin-mode'))

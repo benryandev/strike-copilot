@@ -136,6 +136,7 @@ After the key, Claude asks a few multiple-choice questions (pick an answer, or c
 | How much of the balance in open copies at once, at most? | Becomes your total cap | Half |
 | If the account dipped from its high, how big a dip could you sit through? | Traders who dipped further in replays get flagged | 20% |
 | Any markets to never copy? | Thin or meme markets slip more | e.g. PUMP-USD |
+| Isolated or cross margin? | Isolated: each copy can only lose its own margin. Cross: copies share the balance, fewer single liquidations but more at stake | Isolated |
 | Preferred copy mode? | Breaks ties your way | No preference |
 | Which day each week to review? | Your weekly check-in | Monday |
 
@@ -189,7 +190,7 @@ POST /v2/copy/subscribe
 {"lead_account_id": "0x1a2b...", "copy_mode": "fixed_amount", "margin_per_entry_order": "55", ...}
 DRY RUN: nothing sent. Add --yes to send it.
 ```
-Nothing is sent until you say yes. Order of steps: lock isolated margin and leverage on the trader's markets,
+Nothing is sent until you say yes. Order of steps: lock your margin mode and leverage on the trader's markets,
 subscribe (with the per-market cap and exclusions), then set the total cap.
 
 **Yourself in the app:** Claude gives numbered steps with your exact numbers.

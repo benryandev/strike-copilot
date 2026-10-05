@@ -42,7 +42,7 @@ def hl(body, want=None):
 
 # ---------- profile (answers from the setup questions; gitignored) ----------
 DEFAULTS = {'balance': None, 'leverage': 10, 'max_use': 0.5, 'max_dd': 0.25, 'excluded': [], 'sub_account_id': None,
-            'account_id': None, 'review_day': 'Monday', 'mode_pref': 'either', 'referral_asked': None}
+            'account_id': None, 'review_day': 'Monday', 'mode_pref': 'either', 'referral_asked': None, 'margin_mode': 'isolated'}
 
 
 def load_profile(required=True):

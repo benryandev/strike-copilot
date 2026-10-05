@@ -90,7 +90,7 @@ def analyse(lead, p, days=90, mk=None):
            'settings': {'fixed_margin': {'margin_per_entry': margin, 'max_concurrent_entries': entries},
                         'fixed_ratio': {'copy_amount': acct, 'ratio_now': acct / L.equity(L.now) if L.equity(L.now) else 0},
                         'caps': {'per_symbol': sym_cap, 'total': budget}},
-           'too_small': margin < min_margin, 'max_dd': F(p['max_dd']), 'windows': {}}
+           'too_small': margin < min_margin, 'margin_mode': p.get('margin_mode') or 'isolated', 'max_dd': F(p['max_dd']), 'windows': {}}
     for d in (days, 30):
         V = window(L, d) if d != days else L
         fm = V.run(acct, V.fm(margin, lev), lev, fee=fee, cap=sym_cap, tcap=budget, excluded=ex)
@@ -123,7 +123,7 @@ def report(r):
             lines.append(f"  (Disclosure: this mode traded more volume (${mine['volume']:,.0f} vs ${other['volume']:,.0f}), which helps the repo author's referral tier. The pick rests on the numbers above.)")
     lines.append(f"  Settings: fixed margin ${s['fixed_margin']['margin_per_entry']:,.0f} per entry (lead peaked at {s['fixed_margin']['max_concurrent_entries']} open entries)"
                  f" | fixed ratio copy amount ${s['fixed_ratio']['copy_amount']:,.0f} (ratio now {s['fixed_ratio']['ratio_now'] * 100:.2f}% of the lead)"
-                 f" | caps ${s['caps']['per_symbol']:,.0f} per symbol, ${s['caps']['total']:,.0f} total | leverage {r['leverage']:.0f}x isolated, locked on: {', '.join(r['markets'])}")
+                 f" | caps ${s['caps']['per_symbol']:,.0f} per symbol, ${s['caps']['total']:,.0f} total | leverage {r['leverage']:.0f}x {r['margin_mode']}, locked on: {', '.join(r['markets'])}")
     if r['too_small']: lines.append('  ** Your budget is too small for this lead: the margin per entry falls below the market minimum, so many copies would be skipped.')
     if r['too_deep']: lines.append(f"  ** Max drop deeper than your {r['max_dd'] * 100:.0f}% limit in: {', '.join(sorted(set(r['too_deep'])))}")
     return '\n'.join(lines)
