@@ -8,7 +8,8 @@
 Changes (each prints the exact request and does nothing unless you add --yes):
   set-leverage <10> [SYM-USD,...|all] [sub=<id>]           leverage for FUTURE positions (a market with an open position keeps its old setting)
   set-margin-mode <isolated|cross> [SYM-USD,...|all] [sub=<id>]
-  subscribe <lead> margin=<usd>|ratio=<usd> [platform=hyperliquid|strike] [cap=<usd/symbol>] [exclude=A-USD,B-USD] [sub=<id>]
+  subscribe <lead> margin=<usd>|ratio=<usd> [platform=hyperliquid|strike] [cap=<usd/symbol>] [tcap=<usd total>] [exclude=A-USD,B-USD]
+            [min_entry=<usd>] [mult=<1-10>] [sub=<id>]      (min_entry and mult: fixed ratio only)
   caps <subscription_id> <per_symbol_usd> <total_usd> [exclude=A-USD,...] [sub=<id>]     ("0" clears a cap)
   stop <subscription_id> close|keep [sub=<id>]             close = close copied positions at market; keep = leave them open
 
@@ -109,20 +110,31 @@ def main(a):
         if 'margin' in kv: body.update(copy_mode='fixed_amount', margin_per_entry_order=str(kv['margin']))
         elif 'ratio' in kv: body.update(copy_mode='fixed_ratio', copy_amount=str(kv['ratio']))
         else: sys.exit('say margin=<usd per entry> (fixed margin) or ratio=<usd allocation> (fixed ratio)')
+        # Field names below match what Strike's app sends (bundle, 5 Oct 2026); max_margin_total, minimum_entry and
+        # ratio_multiplier aren't in the published spec yet.
         if kv.get('cap'): body['max_margin_per_symbol'] = str(kv['cap'])
+        if kv.get('tcap'): body['max_margin_total'] = str(kv['tcap'])
         if kv.get('exclude'): body['excluded_symbols'] = [x for x in kv['exclude'].upper().split(',') if x]
-        if sub: body['sub_account_id'] = sub
         if body['copy_mode'] == 'fixed_ratio':
-            # Strike refuses a copy larger than the current balance ("invalid inputs"; confirmed 2026-10-05).
-            acct = request('GET', '/v2/account' + (f'?sub_account_id={sub}' if sub else ''))
-            avail = float(acct.get('available_balance') or 0) if isinstance(acct, dict) else 0.0
-            if float(kv['ratio']) > avail:
-                sys.exit(f"Not sent: a fixed-ratio copy amount is reserved from your available balance, and ${float(kv['ratio']):,.2f} is more than "
-                         f"the ${avail:,.2f} available. Fund the account first, or use a copy amount up to ${avail:,.2f}.")
+            if kv.get('min_entry'): body['minimum_entry'] = str(kv['min_entry'])  # small copies are raised to this trade value
+            if kv.get('mult'):
+                if not 1 <= float(kv['mult']) <= 10: sys.exit('mult (ratio multiplier) is 1 to 10')
+                body['ratio_multiplier'] = str(kv['mult'])
+        elif kv.get('min_entry') or kv.get('mult'): sys.exit('min_entry and mult only apply to fixed ratio')
+        if sub: body['sub_account_id'] = sub
+        # Strike refuses a copy larger than the current balance ("invalid inputs"; confirmed 2026-10-05), in both modes
+        # (the app shows "Insufficient available balance").
+        acct = request('GET', '/v2/account' + (f'?sub_account_id={sub}' if sub else ''))
+        avail = float(acct.get('available_balance') or 0) if isinstance(acct, dict) else 0.0
+        need = float(kv.get('ratio') or kv.get('margin'))
+        if need > avail:
+            what = 'fixed-ratio copy amount' if 'ratio' in kv else 'margin per entry'
+            sys.exit(f"Not sent: the {what} (${need:,.2f}) is more than your available balance (${avail:,.2f}). "
+                     f"Fund the account first, or use an amount up to ${avail:,.2f}.")
         r = _send('POST', '/v2/copy/subscribe', body, yes)
         if isinstance(r, dict) and r.get('subscription_id'):
-            print(f"\nSubscribed: {r['subscription_id']}. The total cap is not part of subscribing; set it now with:\n"
-                  f"  python3 scripts/strike_api.py caps {r['subscription_id']} <per_symbol> <total>" + (f' sub={sub}' if sub else ''))
+            print(f"\nSubscribed: {r['subscription_id']}." + ('' if kv.get('tcap') else
+                  f" No total cap was set; add one with:\n  python3 scripts/strike_api.py caps {r['subscription_id']} <per_symbol> <total>" + (f' sub={sub}' if sub else '')))
         elif yes:
             print('\nStrike refused it, so no subscription was created (nothing to stop or cap).')
     elif cmd == 'caps':

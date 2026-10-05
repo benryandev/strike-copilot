@@ -18,28 +18,38 @@ Tell the user up front how many changes there are (e.g. 4) and number each menu 
    `python3 scripts/strike_api.py set-margin-mode <isolated|cross> BTC-USD,ETH-USD,... [sub=<id>]` then
    `python3 scripts/strike_api.py set-leverage <lev> BTC-USD,ETH-USD,... [sub=<id>]`.
    Explain: a market with an open position keeps its old setting until it's flat.
-2. Subscribe with the per-symbol cap and exclusions:
-   - fixed margin: `python3 scripts/strike_api.py subscribe <lead> margin=<usd> cap=<usd> exclude=A-USD,B-USD [sub=<id>]`
-   - fixed ratio: `python3 scripts/strike_api.py subscribe <lead> ratio=<usd> cap=<usd> exclude=... [sub=<id>]`
+2. Subscribe with both caps and the exclusions in one call:
+   - fixed margin: `python3 scripts/strike_api.py subscribe <lead> margin=<usd> cap=<usd> tcap=<usd> exclude=A-USD,B-USD [sub=<id>]`
+   - fixed ratio: `python3 scripts/strike_api.py subscribe <lead> ratio=<usd> cap=<usd> tcap=<usd> exclude=... [min_entry=<usd>] [mult=<1-10>] [sub=<id>]`
    New copies start with the lead's next trade: their positions already open aren't copied.
-   The account must be funded first. A fixed-ratio copy amount is reserved from the available balance and can't exceed
-   it (strike_api.py refuses before sending). If Strike still answers "invalid inputs", check the balance, the
-   copy amount vs balance, and the lead's copier slots before retrying; don't retry blindly.
-3. Set the total cap straight after with the new subscription id:
-   `python3 scripts/strike_api.py caps <subscription_id> <per_symbol> <total> exclude=... [sub=<id>]`
+   The account must be funded first: Strike refuses a copy larger than the available balance, in both modes
+   (strike_api.py checks before sending). If Strike still answers "invalid inputs", check the balance, the amount
+   vs balance, and the lead's copier slots before retrying; don't retry blindly.
+   Fixed ratio extras (only if the user wants them; explain first): **Minimum entry** raises any copied entry smaller
+   than this trade value up to it (fewer copies skipped as too small, but small entries become bigger than the
+   ratio says). **Ratio multiplier** (1-10x) multiplies every copied entry. Re-run the replay with
+   `python3 scripts/replay.py <lead> fr=<amount> mult=<x> min_entry=<usd> cap=... tcap=...` to show the effect first.
+   The per-symbol cap must be at least the margin per entry.
    If the user skips a step, say what that means (e.g. skipping leverage: copies would use Strike's default leverage
-   on those markets) and carry on; skipping the subscribe ends the setup.
-4. Confirm with `python3 scripts/account.py` and read back mode, size, caps and exclusions.
+   on those markets, often 20x cross) and carry on; skipping the subscribe ends the setup.
+3. Confirm with `python3 scripts/account.py` and read back mode, size, caps and exclusions.
 
 ## B. Manually in the app
-Give numbered steps with their exact numbers:
-1. Make sure the account (or sub-account) has the balance funded.
-2. For each market the lead trades: open the market, set margin mode to the profile's mode (Isolated or Cross) and leverage to <lev>x before any
-   position exists there.
-3. Open the lead's page in Copy Trading -> Copy. Choose the mode, enter the margin per entry (fixed margin) or copy
-   amount (fixed ratio).
-4. Advanced settings: max margin per symbol <cap>, max total margin <total>, untick excluded markets.
-5. Leave "copy existing positions" off. Confirm.
+Give numbered steps with their exact numbers, using the app's own labels (screenshots in docs/images/):
+1. Fund the account (or sub-account) first: the copy button says "Insufficient available balance" until you do.
+2. Open the trader's page (Copy Trading -> Explore, or the link `https://app.strikefinance.org/public-portfolio/<0x address>?platform=hyperliquid`)
+   and press **Copy**.
+3. Pick the tab: **Fixed Ratio** (enter the **Total allocation**) or **Fixed Margin** (enter the **Margin per copied entry**).
+4. Open **Advanced settings**:
+   - **Max total margin**: <total cap>. **Max margin per symbol**: <per-symbol cap>.
+   - **Assets to copy**: untick each excluded market.
+   - **Copy open positions on enter**: leave off.
+   - Fixed ratio only: **Minimum entry** and **Ratio multiplier** only if agreed (see A.2); otherwise leave 0 and 1x.
+   - **Margin mode & leverage** (the arrow on the right): one screen with every market. For each of the trader's
+     markets set **Isolated** or **Cross** (the profile's margin mode) and the leverage, then press **Confirm** on that
+     screen. Copies use these settings, not the trader's; Strike's defaults are often Cross 20x.
+   - Press **Save** to return.
+5. Press **Confirm Copy**.
 Then offer to verify it with `account.py`.
 
 ## After

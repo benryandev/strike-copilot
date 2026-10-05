@@ -54,8 +54,14 @@ The author shares a referral code (`BenRyan`). If your account has **no** referr
 share of those fees. It's optional: say no and you'll never be asked again, and everything works the same.
 If you say yes, you apply it yourself in one of two ways: open
 [app.strikefinance.org/trade/BTC?referralCode=BenRyan](https://app.strikefinance.org/trade/BTC?referralCode=BenRyan)
-while logged in to Strike, or enter `BenRyan` on the Referrals page. The tool can't set a referral code itself
-(Strike only allows that in the app), and it never touches a code you already have.
+while logged in to Strike, or press **Enter Code** on the Referrals page and type `BenRyan`. The tool can't set a
+referral code itself (Strike only allows that in the app), and it never touches a code you already have.
+
+Once a code is linked, the button at the top right of the Referrals page changes from **Enter Code** to
+**Refer Accepted**:
+
+![Referrals page before a code is linked: Enter Code button](docs/images/referral-before.png)
+![Referrals page after: Refer Accepted](docs/images/referral-after.png)
 
 More trading volume also helps the author's referral tier. So whenever the recommended copy mode trades more volume
 than the other one, the result says so, with both volumes. The choice itself follows the rule in section 7.
@@ -108,15 +114,18 @@ The tool talks to Strike through an **API key**, a pair of keys made on your own
 What happens:
 1. Claude runs `python3 scripts/strike_api.py keygen` and shows you the public key.
 2. Open [app.strikefinance.org/api-keys](https://app.strikefinance.org/api-keys) while logged in to Strike (wallet or email login both work).
-3. Add a new key, paste the public key, choose an expiry date, and save.
-   <!-- screenshot: Strike API keys page with the add-key form -->
+3. Fill in the form at the top: a name (e.g. "Strike Copilot"), the public key Claude showed you, and **Days to
+   expire** (we suggest 90; leave it empty and the key never expires). Press **Authorize**.
+   **Don't press "Generate"**: that makes a key in your browser, and the tool would never get the private half.
+
+   ![Strike API keys page: name, public key, days to expire, Authorize](docs/images/api-keys.png)
 4. Tell Claude "done". It checks the key works (`strike_api.py whoami`).
 
 **What the key can do:** read your account, change leverage and margin settings, and manage copy subscriptions.
 Strike labels these keys as able to trade, but **they can't withdraw funds**. This tool deliberately doesn't wire up
 any trading of your own positions.
 
-**Keys expire.** When yours does, Claude will tell you the key was refused. Delete the old key on the Strike page,
+**If you set an expiry,** the key stops working on that date and Claude will tell you it was refused. Delete the old key on the Strike page,
 delete `.secrets/strike_api.key`, and say "set me up" again.
 
 **Never paste a private key or a wallet seed phrase into any chat**, including this one. If you ever do, treat it as
@@ -190,11 +199,28 @@ POST /v2/copy/subscribe
 {"lead_account_id": "0x1a2b...", "copy_mode": "fixed_amount", "margin_per_entry_order": "55", ...}
 DRY RUN: nothing sent. Add --yes to send it.
 ```
-Nothing is sent until you say yes. Order of steps: lock your margin mode and leverage on the trader's markets,
-subscribe (with the per-market cap and exclusions), then set the total cap.
+Nothing is sent until you pick "Make this change". Order of steps: set your margin mode and leverage on the
+trader's markets, then subscribe (with both caps and your excluded markets).
 
-**Yourself in the app:** Claude gives numbered steps with your exact numbers.
-<!-- screenshot: Strike copy-trading subscribe dialog with Advanced settings -->
+**Yourself in the app:** Claude gives numbered steps with your exact numbers, using these screens. On the trader's
+page press **Copy**, then choose a tab:
+
+| Fixed ratio: a total allocation | Fixed margin: the same margin per copied entry |
+|---|---|
+| ![Copy dialog, Fixed Ratio tab](docs/images/copy-fixed-ratio.png) | ![Copy dialog, Fixed Margin tab](docs/images/copy-fixed-margin.png) |
+
+The button reads **Insufficient available balance** until the account is funded: Strike won't start a copy larger
+than your balance. Once funded it reads **Confirm Copy**.
+
+**Advanced settings** holds the caps, the markets to copy, and (fixed ratio only) Minimum entry and Ratio
+multiplier. Leave those two at 0 and 1x unless Claude has shown you what they change.
+
+![Advanced settings: minimum entry, max total margin, max margin per symbol, assets to copy](docs/images/copy-advanced.png)
+
+**Margin mode & leverage** (the arrow in Advanced settings) sets every market on one screen. Copies use *your*
+settings for each market, not the trader's, and Strike's defaults are often Cross 20x, so set these first.
+
+![Margin mode and leverage for each market](docs/images/copy-leverage.png)
 
 Your first copy lands on the trader's **next** trade. Their positions that are already open aren't copied.
 

@@ -1,6 +1,6 @@
 """Replay a lead as a Strike copier would have copied them, on a funded account, in either copy mode.
 
-  python3 scripts/replay.py <lead> [days=90] [acct=<usd>] [fm=<margin per entry>] [fr=<copy amount>] [lev=10] [cap=<usd/symbol>] [tcap=<usd total>] [ex=PUMP-USD,...]
+  python3 scripts/replay.py <lead> [days=90] [acct=<usd>] [fm=<margin per entry>] [fr=<copy amount>] [lev=10] [cap=<usd/symbol>] [tcap=<usd total>] [ex=PUMP-USD,...] [mult=1-10] [min_entry=<usd>]
 
 <lead> is a Hyperliquid 0x address or a Strike account id (uuid). Defaults come from profile.json.
 
@@ -113,8 +113,16 @@ class Lead:
     def fm(self, margin, lev):
         return lambda q, px, t: (1 if q > 0 else -1) * margin * lev / px
 
-    def fr(self, amount):
-        return lambda q, px, t: q * min(amount / self.equity(t), 1.0) if self.equity(t) > 0 else 0.0
+    def fr(self, amount, mult=1.0, min_entry=0.0):
+        """Fixed ratio: lead order x (amount / lead equity) x multiplier (Strike's 1-10x "Ratio multiplier"), capped at 100%
+        of the lead's order; then any entry below min_entry trade value is raised to it (Strike's "Minimum entry")."""
+        def size(q, px, t):
+            eq = self.equity(t)
+            if eq <= 0: return 0.0
+            s = q * min(amount * mult / eq, 1.0)
+            if min_entry and 0 < abs(s) * px < min_entry: s = (1 if s > 0 else -1) * min_entry / px
+            return s
+        return size
 
     def run(self, start, size, lev=10, fee=None, cap=0, tcap=0, excluded=()):
         return replay(self.orders, self.marks, start, size, lev, my_fee() if fee is None else fee, cap, tcap, set(excluded), self.mk)
@@ -191,4 +199,7 @@ if __name__ == '__main__':
           f"account ${acct:,.0f}, {lev:.0f}x, fee {my_fee() * 100:.4f}%/side" + (f"; marked at fills only: {L.unmarked}" if L.unmarked else ''))
     cap, tcap = F(kv.get('cap', 0)), F(kv.get('tcap', 0))
     if kv.get('fm'): print(fmt(f"fixed margin ${F(kv['fm']):,.0f}/entry", L.run(acct, L.fm(F(kv['fm']), lev), lev, cap=cap, tcap=tcap, excluded=ex), acct))
-    if kv.get('fr'): print(fmt(f"fixed ratio ${F(kv['fr']):,.0f}", L.run(acct, L.fr(F(kv['fr'])), lev, cap=cap, tcap=tcap, excluded=ex), acct))
+    if kv.get('fr'):
+        mult, mn = F(kv.get('mult', 1)), F(kv.get('min_entry', 0))
+        lab = f"fixed ratio ${F(kv['fr']):,.0f}" + (f" x{mult:g}" if mult != 1 else '') + (f", min entry ${mn:,.0f}" if mn else '')
+        print(fmt(lab, L.run(acct, L.fr(F(kv['fr']), mult, mn), lev, cap=cap, tcap=tcap, excluded=ex), acct))

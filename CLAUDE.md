@@ -60,11 +60,13 @@ without a one-line explanation. Never assume their answers: ask.
 
 ## Facts that are easy to get wrong
 - API keys are made on the user's computer (`strike_api.py keygen`); the user pastes the **public** key on
-  app.strikefinance.org/api-keys. Keys can trade but can't withdraw. They expire (the date is on the API keys page): renew the same way.
+  app.strikefinance.org/api-keys. Keys can trade but can't withdraw. Keys never expire unless the user sets "Days to expire" (suggest 90). Never press Strike's "Generate" button:
+  that makes the key in the browser and this repo never gets the private half.
 - Leverage changes apply to future positions only; a market with an open position silently keeps its old setting.
 - Fixed ratio sizes each copy off the lead's whole equity (Hyperliquid spot + perp). Against a large lead the
   ratio is tiny; if the lead withdraws, every later copy gets bigger.
 - Fixed margin opens one entry per lead order, so a lead who adds often stacks many entries: margin per entry x
   max concurrent entries must fit the budget.
-- The total cap isn't part of subscribing: set it with `strike_api.py caps` straight after.
+- Both caps can be set when subscribing (`tcap=`); `caps` changes them later. A copy can't be larger than the available
+  balance (Strike refuses it, both modes). Fixed ratio also has Minimum entry and Ratio multiplier (see apply-copy).
 - Codes are case-sensitive: the author's referral code is `BenRyan`.
