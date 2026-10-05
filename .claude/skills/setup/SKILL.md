@@ -47,8 +47,9 @@ anything else. Put the suggested option first with "(Recommended)" in its label,
 description of what it means for them. Two rounds:
 
 **Round 1** (one AskUserQuestion call, four questions):
-1. Balance, header "Balance": "How much will you fund the copy account with?" Options: $500, $1,000, $5,000, $10,000
-   (no recommendation; "Other" covers any amount). Description: sizes every suggestion.
+1. Balance, header "Balance": "How much will you fund the copy account with?" Options: $250, $500, $1,000, $5,000
+   (no recommendation; "Other" covers any amount, e.g. $10,000). Description: sizes every suggestion. Four options is
+   the tool's limit; the set matches real copiers (median active copier holds ~$435, 5 Oct 2026).
 2. Leverage, header "Leverage": "What leverage should every market use?" Options: 10x (Recommended): each copy ties up
    a tenth of its size as margin; 5x: further from liquidation, needs twice the margin; 3x: very conservative;
    20x: liquidation comes much sooner.

@@ -131,7 +131,7 @@ After the key, Claude asks a few multiple-choice questions (pick an answer, or c
 
 | Question | Why it matters | Typical answer |
 |---|---|---|
-| How much will you fund the copy account with? | Sizes every trade and cap | $500 – $5,000 |
+| How much will you fund the copy account with? | Sizes every trade and cap | $250 – $5,000 |
 | What leverage on every market? | Higher means liquidations come sooner | 10x |
 | How much of the balance in open copies at once, at most? | Becomes your total cap | Half |
 | If the account dipped from its high, how big a dip could you sit through? | Traders who dipped further in replays get flagged | 20% |
