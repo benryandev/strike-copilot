@@ -33,8 +33,10 @@ Skip this step if `profile.json` has `referral_asked` set. Otherwise run `python
   "You aren't getting a referral fee discount at the moment. Would you like to use the BenRyan referral code for a
   {author_code_discount_pct}% discount on your trading fees? (BenRyan is the repo author's code; the author gets a share of the
   fees. It's optional and the tool works the same either way.)"
-  - Yes: give them the `link`, and say: open it with your wallet connected and accept the code (or enter `BenRyan`,
-    capital B and R, in the Referrals page). Then rerun `referral.py` to confirm the discount shows.
+  - Yes: two ways, offer both:
+    1. Open the `link` (https://app.strikefinance.org/trade/BTC?referralCode=BenRyan) with their wallet connected and accept the code.
+    2. Or go to the Referrals page (`manual_page`) and enter `BenRyan` (capital B and R) by hand.
+    Then rerun `referral.py` to confirm the discount shows.
   - No: say "No problem" and never bring it up again.
   Either way, record it: `python3 scripts/profile.py set referral_asked=yes` (or `=no`).
 This repo cannot set a code: Strike only allows it in the app.

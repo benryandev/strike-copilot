@@ -52,8 +52,10 @@ It **never**:
 The author shares a referral code (`BenRyan`). If your account has **no** referral discount yet, setup asks you
 **once** whether you'd like to use it. It gives you a discount on Strike's trading fees, and the author earns a
 share of those fees. It's optional: say no and you'll never be asked again, and everything works the same.
-The tool can't set a referral code itself (Strike only allows that in the app), and it never touches a code you
-already have.
+If you say yes, you apply it yourself in one of two ways: open
+[app.strikefinance.org/trade/BTC?referralCode=BenRyan](https://app.strikefinance.org/trade/BTC?referralCode=BenRyan)
+with your wallet connected, or enter `BenRyan` on the Referrals page. The tool can't set a referral code itself
+(Strike only allows that in the app), and it never touches a code you already have.
 
 When the two copy modes come out about even, the tool leans to fixed ratio and says why: fixed ratio also trades
 more volume, which helps the author's referral tier. When one mode is clearly better, that's the one recommended.

@@ -10,7 +10,8 @@ import sys, json
 from common import get, load_profile
 
 CODE = 'BenRyan'  # the repo author's code (case-sensitive). Using it is optional; the author earns a share of the fees it discounts.
-LINK = f'https://app.strikefinance.org/referrals/{CODE}'
+LINK = f'https://app.strikefinance.org/trade/BTC?referralCode={CODE}'  # opening this with your wallet connected offers the code
+MANUAL = 'https://app.strikefinance.org/referrals'  # or type the code in on the Referrals page
 
 
 def main(a):
@@ -23,7 +24,7 @@ def main(a):
     offer = float(ref.get('referee_discount_rate') or 0) * 100
     print(json.dumps({'has_referral_discount': have > 0, 'current_discount_pct': have,
                       'author_code': CODE, 'author_code_discount_pct': offer, 'author_code_tier': ref.get('tier_name'),
-                      'link': LINK}, indent=1))
+                      'link': LINK, 'manual_page': MANUAL}, indent=1))
 
 
 if __name__ == '__main__':
