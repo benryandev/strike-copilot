@@ -3,7 +3,8 @@
   python3 scripts/account.py
 
 Checks: balance and drawdown from peak (vs your max_dd), each subscription (mode, size, caps, P&L), each lead
-(last trade, last 7 days on Strike markets, copiers), liquidations of your copies in the last 7 days, markets whose
+(last trade, last 7 days on Strike markets, copiers, liquidations of the lead), copies the lead no longer holds,
+liquidations of your copies in the last 7 days, markets whose
 leverage or margin mode drifted from your profile, your fee, and the referral discount. Read-only.
 """
 import sys, time, datetime, collections
@@ -49,6 +50,7 @@ def main():
         print(f"  {x['symbol']:12} {'LONG ' if side > 0 else 'SHORT'} ${abs(F(x['size'])) * mark:>9,.0f}  {x['margin_mode']} {x['leverage']}x  uPnL {F(x['upnl']):+,.2f}" + (f"  liquidation {dist:.1f}% away" if liq else ''))
     if not pos: print('  none')
     fills = get(f'/v2/history/fill?account_id={aid}&limit=1000').get('fills') or []
+    orphan_check(pos, subs, flags)
     liqs = [x for x in fills if x.get('auto_close_type') and x['timestamp'] > NOW - 7 * DAY]
     if liqs: flags.append(f"{len(liqs)} of your copies were force-closed ({', '.join(sorted({x['symbol'] + ' ' + x['auto_close_type'] for x in liqs}))}) in the last 7 days.")
 
@@ -76,6 +78,14 @@ def lead_check(lead, NOW, flags):
             wk = [x for x in perp if x['time'] > NOW - 7 * DAY]
             on = sum(F(x['closedPnl']) for x in wk if x['coin'] in to_sym); off = sum(F(x['closedPnl']) for x in wk if x['coin'] not in to_sym)
             share = sum(1 for x in wk if x['coin'] in to_sym) / len(wk) if wk else 0
+            # The lead's own liquidations/ADL on Strike markets. Strike doesn't copy these, so your copy stays open.
+            # HL tags liquidation fills with liquidation.liquidatedUser (also present when the lead was only the other side).
+            forced = [x for x in wk if x['coin'] in to_sym and ((x.get('liquidation') or {}).get('liquidatedUser', '').lower() == lead.lower()
+                      or not x['dir'].startswith(('Open', 'Close', 'Long >', 'Short >', 'Buy', 'Sell', 'Spot')))]
+            if forced:
+                flags.append(f"Lead {lead[:10]} was force-closed on Hyperliquid this week ({', '.join(sorted({to_sym[x['coin']] for x in forced}))}). "
+                             "Strike doesn't copy forced closes, so your copy of those markets may still be open, or bigger than the lead's "
+                             "remaining position. Check \"Your positions\" above.")
         else:
             fl = get(f'/v2/history/fill?account_id={lead}&limit=1000').get('fills') or []
             last = max((x['timestamp'] for x in fl), default=0); wk = [x for x in fl if x['timestamp'] > NOW - 7 * DAY]
@@ -88,6 +98,34 @@ def lead_check(lead, NOW, flags):
                                   "One week is noise; two or three in a row is a reason to stop.")
     except Exception as ex:
         print(f'    lead check failed: {ex}')
+
+
+def orphan_check(pos, subs, flags):
+    """Copies the lead no longer holds. Strike doesn't copy a lead's liquidation (Strike, Oct 2026: the copy "just stays there"),
+    so a copy can outlive the lead's position and nothing will close it. Compares your open positions with what your active
+    Hyperliquid leads hold now. Strike's per-subscription position split (/v2/copy/positions) isn't open to API keys yet."""
+    act = [e['lead_account_id'].lower() for e in subs if e['status'] == 'active']
+    leads = [a for a in act if a.startswith('0x')]
+    if not pos or not leads: return
+    if len(leads) < len(act):
+        print('\n(Orphan check skipped: you also copy a Strike trader, and this repo can\'t read their positions.)'); return
+    to_sym = hl_map(); held = collections.defaultdict(set)
+    try:
+        for lead in leads:
+            for dex in ('', 'xyz'):
+                for a in hl({'type': 'clearinghouseState', 'user': lead, **({'dex': dex} if dex else {})}, dict).get('assetPositions') or []:
+                    q = a['position']
+                    if q['coin'] in to_sym: held[to_sym[q['coin']]].add(1 if F(q['szi']) > 0 else -1)
+    except Exception as ex:
+        print(f'\n(Orphan check failed: {ex})'); return
+    for x in pos:
+        side = 1 if F(x['size']) > 0 else -1
+        if side in held.get(x['symbol'], ()): continue
+        many = len(leads) > 1
+        flags.append(f"{x['symbol']} {'long' if side > 0 else 'short'}: your lead{'s' if many else ''} "
+                     f"{('now hold' if many else 'now holds') + ' the opposite side' if x['symbol'] in held else ('no longer hold' if many else 'no longer holds') + ' this market'}. If it's a copy, nothing will close it "
+                     "for you (Strike doesn't copy a lead's liquidation). Run the review again in a few minutes in case the lead has just "
+                     "traded; if it's still there, decide whether to close it yourself in the app or keep it.")
 
 
 if __name__ == '__main__':

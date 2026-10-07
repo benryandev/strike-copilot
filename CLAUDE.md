@@ -72,4 +72,6 @@ without a one-line explanation. Never assume their answers: ask.
   copied orders (`cancel_open_orders=true`). Say which applies when the user stops a copy.
 - Both caps can be set when subscribing (`tcap=`); `caps` changes them later. A copy can't be larger than the available
   balance (Strike refuses it, both modes). Fixed ratio also has Minimum entry and Ratio multiplier (see apply-copy).
+- **A lead's liquidation is not copied** (nor ADL or settlement): the copy stays open with no lead position behind
+  it (confirmed by Strike, Oct 2026; they may change it). `account.py` flags these; the user closes or keeps it in the app.
 - Codes are case-sensitive: the author's referral code is `BenRyan`.
