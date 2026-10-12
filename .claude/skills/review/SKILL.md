@@ -27,11 +27,17 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
      idle weeks, or if they now fail checks.
    - Profit moving to markets Strike lacks: watch; two or three weeks running is a reason to stop.
    - Force-closed copies: explain what happened and check leverage/caps.
-   - Lead force-closed, or a copy the lead no longer holds: Strike doesn't copy a lead's liquidation, so the copy
-     stays open and nothing will close it. Explain that plainly. Run `account.py` again after a few minutes (copies can
-     lag the lead by seconds to a minute); if the flag is still there, the user decides in the app: close it, or keep
-     it as their own position. This repo never closes positions. A partial liquidation of the lead leaves the copy
-     bigger than the lead's remaining position: the lead's later closes shrink it by the same fraction, not to zero.
+   - Lead force-closed: since 12 Oct 2026 Strike closes your copy by the same fraction when the lead is liquidated
+     or ADL'd, so the copy should have closed with them. Check it did.
+   - A copy the lead no longer holds: unusual now (a missed or failed close). Run `account.py` again after a few
+     minutes (copies can lag the lead by seconds to a minute); if the flag is still there, the user decides in the
+     app: close it, or keep it as their own position. This repo never closes positions.
+   - Caps skipping copies: the review counts skipped copies per lead and roughly values them at today's price
+     (before fees, ignoring the lead's later closes; treat it as a direction, not a number). One week saving or costing
+     money isn't a reason to change caps; a pattern over two or three reviews is.
+   - Copy near liquidation (under 3%): the user decides, add isolated margin or let it go. Don't push either way;
+     adding margin to a losing copy is the user's call, not a fix.
+   - People copying the user: mention it once, so they know changes to this account reach their copiers too.
    - Leverage drift: offer the fix (dry run first).
 4. If nothing needs attention, say so in one line. Don't invent tasks.
 5. Remind them of the next review day (`review_day` in the profile). Suggest an extra review after: a lead's big
