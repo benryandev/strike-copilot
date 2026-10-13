@@ -20,17 +20,17 @@ without a one-line explanation. Never assume their answers: ask.
    private key or seed phrase into chat, tell them to treat it as exposed and make a new one.
    Only the public key is ever shown.
 3. **No orders.** This repo never places, changes or cancels the user's own orders, withdraws, or transfers.
-   `strike_api.py` only wires: account reads, leverage, margin mode, copy subscribe, caps, stop.
+   `strike_api.py` only wires: account reads, leverage, margin mode, copy subscribe, caps, stop loss, stop.
 4. **Every change needs a yes.** Before any `strike_api.py` write, show the exact dry-run output (run it without
    `--yes`), explain it in one line, then ask with the AskUserQuestion tool (the "change menu" below). Only add
    `--yes` after the user picks "Make this change" for that specific change.
    **Change menu** (single choice, header "Change N/M"): "Make this change" / "Skip this one" / "Explain more" /
    "Stop setting up". Never mark any option "(Recommended)" on a change that touches the account: the choice is
    the user's. "Explain more" answers, then shows the same menu again. Stopping a copy uses its own menu (see rule 4b).
-4b. **Stopping a copy** always asks (AskUserQuestion, header "Open trades"): "Close the copied positions now" (sold
-   at market, gains or losses become final) / "Keep them open" (they stay as positions you manage yourself) /
-   "Don't stop the copy".
-   Stopping a copy: always ask "close" (sell the copied positions now) or "keep" (leave them open, managed by you).
+4b. **Stopping a copy** always asks (AskUserQuestion, header "Open trades"): "Stop and close the copied positions"
+   (Strike sells them at market, gains or losses become final) / "Pause new copies instead" (exclude every market
+   with `caps ... exclude=`: nothing new opens, open copies still close when the lead closes) / "Don't stop the copy".
+   Strike no longer keeps copied positions open on stop, so never offer that.
 5. **Never trust Strike's copy score, ROI or "copyable share" alone.** They include spot trading and count markets
    by listing, not liquidity. Recommend a lead only after `lead.py` passes and `compare.py` has run.
 6. **Every recommendation states:** mode (fixed margin or fixed ratio), margin per entry or copy amount, max
@@ -67,9 +67,19 @@ without a one-line explanation. Never assume their answers: ask.
   ratio is tiny; if the lead withdraws, every later copy gets bigger.
 - Fixed margin opens one entry per lead order, so a lead who adds often stacks many entries: margin per entry x
   max concurrent entries must fit the budget.
-- Stopping a copy in the Strike app ("Close subscription") always closes the copied positions at market and does
-  NOT cancel resting copied orders. Only the API can keep positions open; `strike_api.py stop` also cancels open
-  copied orders (`cancel_open_orders=true`). Say which applies when the user stops a copy.
+- Stopping a copy always closes its copied positions at market, in the app ("Close subscription") and through the
+  API (spec v1.2.0, Oct 2026). The app doesn't cancel resting copied orders; `strike_api.py stop` asks Strike to
+  (`cancel_open_orders=true`, not in the spec), so check open orders after a stop. To stop new copies but keep what's
+  open, exclude every market instead.
+- **Copy stop loss** (`stop_loss_amount`, optional): a dollar loss for the whole copy, not per position. Once the copy's
+  P&L since it started (realised after fees plus open; funding not counted) reaches minus that amount, Strike stops the
+  copy and closes its positions at market, so slippage can make the loss bigger. It counts from the copy's start, not
+  from today: a copy at +$1,000 with a $500 stop gives back $1,500 first. Strike refuses a level already lost. Set it
+  with `subscribe ... stop=` or `stop-loss <id> <usd>`. After it fires, nothing copies until the user subscribes again.
+- Copies use the user's leverage and margin mode **by default**. Strike also lets a copy follow the lead's
+  (`leverage_source`/`margin_mode_source: lead`, capped by `max_leverage`), but only on a copy created with its own
+  new sub-account (`own_account: true`); this repo doesn't set that up yet. If the user asks, say so and point them to
+  Strike's docs.
 - Both caps can be set when subscribing (`tcap=`); `caps` changes them later. A copy can't be larger than the available
   balance (Strike refuses it, both modes). Fixed ratio also has Minimum entry and Ratio multiplier (see apply-copy).
 - **A lead's liquidation or ADL closes the copy by the same fraction** (Strike docs, 12 Oct 2026; before that the copy

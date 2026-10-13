@@ -30,6 +30,9 @@ Tell the user up front how many changes there are (e.g. 4) and number each menu 
    ratio says). **Ratio multiplier** (1-10x) multiplies every copied entry. Re-run the replay with
    `python3 scripts/replay.py <lead> fr=<amount> mult=<x> min_entry=<usd> cap=... tcap=...` to show the effect first.
    The per-symbol cap must be at least the margin per entry.
+   Optional **stop loss** (`stop=<usd>`): a dollar loss for the whole copy. When the copy's P&L since it started
+   reaches minus that, Strike stops the copy and closes its positions at market. Offer it, explain it, don't push it;
+   a sensible level is near the copy's biggest drop in the replay plus a margin, never more than the user can lose.
    If the user skips a step, say what that means (e.g. skipping leverage: copies would use Strike's default leverage
    on those markets, often 20x cross) and carry on; skipping the subscribe ends the setup.
 3. Confirm with `python3 scripts/account.py` and read back mode, size, caps and exclusions.
@@ -47,7 +50,7 @@ Give numbered steps with their exact numbers, using the app's own labels (screen
    - Fixed ratio only: **Minimum entry** and **Ratio multiplier** only if agreed (see A.2); otherwise leave 0 and 1x.
    - **Margin mode & leverage** (the arrow on the right): one screen with every market. For each of the trader's
      markets set **Isolated** or **Cross** (the profile's margin mode) and the leverage, then press **Confirm** on that
-     screen. Copies use these settings, not the trader's; Strike's defaults are often Cross 20x.
+     screen. Copies use these settings, not the trader's, by default; Strike's defaults are often Cross 20x.
    - Press **Save** to return.
 5. Press **Confirm Copy**.
 Then offer to verify it with `account.py`.

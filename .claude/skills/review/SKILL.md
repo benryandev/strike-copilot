@@ -21,7 +21,7 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
 2. `python3 scripts/account.py` and explain the result in plain English: balance, drop from peak vs their
    limit, each subscription's P&L, what each lead did this week.
 3. Act on "Needs attention" items calmly, one at a time:
-   - Past drawdown limit: suggest pausing new copies (stop with "keep", or lower caps) and re-checking the lead
+   - Past drawdown limit: suggest pausing new copies (exclude every market, or lower caps) and re-checking the lead
      with `check-trader`. Don't suggest adding funds or switching to win it back.
    - Lead idle: idle spells can be normal. Run `check-trader` on them; suggest a replacement only after about two
      idle weeks, or if they now fail checks.
@@ -35,6 +35,10 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
    - Caps skipping copies: the review counts skipped copies per lead and roughly values them at today's price
      (before fees, ignoring the lead's later closes; treat it as a direction, not a number). One week saving or costing
      money isn't a reason to change caps; a pattern over two or three reviews is.
+   - Stop loss fired: Strike stopped the copy and closed its positions. Explain the result, and don't suggest
+     subscribing again straight away; run `check-trader` first.
+   - Copy close to its stop loss: say how far off it is and that the stop closes everything at market. Moving the
+     stop further away to avoid it firing is the user's call; don't suggest it.
    - Copy near liquidation (under 3%): the user decides, add isolated margin or let it go. Don't push either way;
      adding margin to a losing copy is the user's call, not a fix.
    - People copying the user: mention it once, so they know changes to this account reach their copiers too.

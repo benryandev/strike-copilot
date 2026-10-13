@@ -44,12 +44,22 @@ def main():
         print(f"    margin in use ${F(e['total_margin']):,.0f}, worth ${F(e.get('total_worth') or 0):,.0f}; P&L {F(e['pnl']):+,.2f} "
               f"(realised {F(e['realized_pnl']):+,.2f}, open {F(e['pnl']) - F(e['realized_pnl']):+,.2f}), {e.get('filled_order_count', 0)} copies filled, "
               f"lead has {nc.get(e['lead_account_id'].lower(), 0)}/{COPIER_CAP} copiers")
+        sl = F(e.get('stop_loss_amount') or 0)
+        lev = ("the lead's leverage" + (f" (max {e['max_leverage']}x)" if e.get('max_leverage') else '')) if e.get('leverage_source') == 'lead' else 'your leverage'
+        mm_src = "the lead's margin mode" if e.get('margin_mode_source') == 'lead' else 'your margin mode'
+        if e['status'] == 'active':
+            room = F(e['pnl']) + sl
+            stop_txt = f"${sl:,.0f} (ends the copy at P&L {-sl:,.0f}; ${room:,.0f} away)" if sl else 'none'
+            print(f"    stop loss {stop_txt}; copies use {lev} and {mm_src}")
+            if sl and room < 0.25 * sl:
+                flags.append(f"Copy of {e['lead_account_id'][:10]} is ${room:,.0f} from its ${sl:,.0f} stop loss: when it fires, Strike stops the copy and closes its positions at market.")
         for x in sorted((c for c in cpos or [] if c['subscription_id'] == e['subscription_id']), key=lambda c: liq_dist(c)):
             d = liq_dist(x)
             print(f"      {x['market']:12} {x['side']:5} margin ${F(x['collateral']):>7,.0f}  {x['margin_mode']} {x['leverage']}x  P&L {F(x['pnl']):+9,.2f}"
                   + (f"  liquidation {d:.1f}% away" if d < 999 else ''))
             if d < 3: flags.append(f"{x['market']} {x['side']} copy is {d:.1f}% from liquidation (margin ${F(x['collateral']):,.0f}). Decide now: add isolated margin, or let it go.")
         lead_check(e['lead_account_id'], NOW, flags)
+    stopped_by_strike(q, NOW, flags)
 
     print('\n== Your positions ==')
     pos = request('GET', '/v2/positions' + q).get('positions') or [] or []
@@ -111,6 +121,19 @@ def lead_check(lead, NOW, flags):
                                   "One week is noise; two or three in a row is a reason to stop.")
     except Exception as ex:
         print(f'    lead check failed: {ex}')
+
+
+def stopped_by_strike(q, NOW, flags):
+    """Copies Strike itself stopped in the last 7 days (stop loss). The default subscription list only has active ones."""
+    try:
+        r = request('GET', '/v2/copy/subscriptions' + (q + '&' if q else '?') + 'status=stopped')
+        rows = r.get('subscriptions') or [] if isinstance(r, dict) else []
+    except Exception: return
+    for e in rows:
+        if e.get('stop_reason') == 'stop_loss' and (e.get('stopped_at_ms') or 0) > NOW - 7 * DAY:
+            flags.append(f"Strike stopped your copy of {e['lead_account_id'][:10]} on {day(e['stopped_at_ms'])}: its "
+                         f"${F(e.get('stop_loss_amount') or 0):,.0f} stop loss was reached and its positions were closed (final P&L "
+                         f"{F(e.get('pnl') or 0):+,.2f}). Nothing copies from this lead now unless you subscribe again.")
 
 
 def liq_dist(x):

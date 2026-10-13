@@ -218,7 +218,7 @@ multiplier. Leave those two at 0 and 1x unless Claude has shown you what they ch
 ![Advanced settings: minimum entry, max total margin, max margin per symbol, assets to copy](docs/images/copy-advanced.png)
 
 **Margin mode & leverage** (the arrow in Advanced settings) sets every market on one screen. Copies use *your*
-settings for each market, not the trader's, and Strike's defaults are often Cross 20x, so set these first.
+settings for each market by default, not the trader's, and Strike's defaults are often Cross 20x, so set these first.
 
 ![Margin mode and leverage for each market](docs/images/copy-leverage.png)
 
@@ -231,7 +231,8 @@ Once a week (your review day) say **"Review my account"**. Claude:
 - checks whether Strike changed its API
 - shows your balance, drop from peak, each copy's profit and loss, and what each trader did
 - flags only what needs a decision: you're past your drawdown limit, a trader has gone idle, a trader's profits have
-  moved to markets Strike doesn't list, a copy was force-closed, or a market's leverage drifted from your setting
+  moved to markets Strike doesn't list, a copy was force-closed, a copy is near or hit its stop loss, or a market's
+  leverage drifted from your setting
 
 Do an extra review after a big loss, a liquidation, or any change you make.
 
@@ -249,7 +250,9 @@ Copy and paste these into Claude inside the `strike-copilot` folder.
 | Set caps myself in the app | `Show me how to set caps manually in the Strike app` |
 | Set up a copy | `Set up the copy for 0x... using fixed margin` |
 | Weekly check | `Review my account` |
-| Stop copying someone | `Stop my copy of 0x... and keep the open positions` |
+| Stop copying someone | `Stop my copy of 0x...` (Strike closes the copied positions) |
+| Pause new copies, keep what's open | `Pause new copies from 0x... but keep the open positions` |
+| Set a stop loss on a copy | `Set a $300 stop loss on my copy of 0x...` |
 | Change my settings | `Change my balance to $2,000 and exclude PUMP-USD` |
 | Update the tool | `Check for updates` |
 

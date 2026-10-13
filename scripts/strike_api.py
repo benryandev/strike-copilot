@@ -9,9 +9,10 @@ Changes (each prints the exact request and does nothing unless you add --yes):
   set-leverage <10> [SYM-USD,...|all] [sub=<id>]           leverage for FUTURE positions (a market with an open position keeps its old setting)
   set-margin-mode <isolated|cross> [SYM-USD,...|all] [sub=<id>]
   subscribe <lead> margin=<usd>|ratio=<usd> [platform=hyperliquid|strike] [cap=<usd/symbol>] [tcap=<usd total>] [exclude=A-USD,B-USD]
-            [min_entry=<usd>] [mult=<1-10>] [sub=<id>]      (min_entry and mult: fixed ratio only)
+            [min_entry=<usd>] [mult=<1-10>] [stop=<usd>] [sub=<id>]      (min_entry and mult: fixed ratio only)
   caps <subscription_id> <per_symbol_usd> <total_usd> [exclude=A-USD,...] [sub=<id>]     ("0" clears a cap)
-  stop <subscription_id> close|keep [sub=<id>]             close = close copied positions at market; keep = leave them open
+  stop-loss <subscription_id> <usd> [sub=<id>]             end the copy once its P&L reaches -<usd> ("0" clears it)
+  stop <subscription_id> [sub=<id>]                        stop copying; Strike closes the copied positions at market
 
 What this tool can never do: place, change or cancel your own orders, withdraw, or transfer funds.
 Strike API keys can't withdraw by design, and order endpoints are deliberately not wired here.
@@ -54,7 +55,7 @@ def request(method, path, body=None):
     body_str = json.dumps(body, separators=(',', ':')) if body is not None else ''
     ts = str(int(time.time())); nonce = str(uuid.uuid4())
     msg = f'{method.upper()}:{path}:{ts}:{nonce}:{hashlib.sha256(body_str.encode()).hexdigest()}'
-    # Header name: the spec says X-Api-Wallet-Signature-Timestamp, but the server only accepts X-API-Wallet-Timestamp.
+    # Header name: older specs said X-Api-Wallet-Signature-Timestamp; the server (and spec v1.2.0) use X-API-Wallet-Timestamp.
     cmd = ['curl', '-s', '--max-time', '30', '-X', method.upper(), STRIKE_API + path,
            '-H', f'X-API-Wallet-Public-Key: {pubkey()}', '-H', f'X-API-Wallet-Signature: {priv.sign(msg.encode()).hex()}',
            '-H', f'X-API-Wallet-Timestamp: {ts}', '-H', f'X-API-Wallet-Nonce: {nonce}', '-H', 'Content-Type: application/json']
@@ -110,8 +111,7 @@ def main(a):
         if 'margin' in kv: body.update(copy_mode='fixed_amount', margin_per_entry_order=str(kv['margin']))
         elif 'ratio' in kv: body.update(copy_mode='fixed_ratio', copy_amount=str(kv['ratio']))
         else: sys.exit('say margin=<usd per entry> (fixed margin) or ratio=<usd allocation> (fixed ratio)')
-        # Field names below match what Strike's app sends (bundle, 5 Oct 2026); max_margin_total, minimum_entry and
-        # ratio_multiplier aren't in the published spec yet.
+        # Field names as in Strike's copy-trading spec (v1.2.0, 13 Oct 2026).
         if kv.get('cap'): body['max_margin_per_symbol'] = str(kv['cap'])
         if kv.get('tcap'): body['max_margin_total'] = str(kv['tcap'])
         if kv.get('exclude'): body['excluded_symbols'] = [x for x in kv['exclude'].upper().split(',') if x]
@@ -121,6 +121,9 @@ def main(a):
                 if not 1 <= float(kv['mult']) <= 10: sys.exit('mult (ratio multiplier) is 1 to 10')
                 body['ratio_multiplier'] = str(kv['mult'])
         elif kv.get('min_entry') or kv.get('mult'): sys.exit('min_entry and mult only apply to fixed ratio')
+        if kv.get('stop'):
+            if float(kv['stop']) <= 0: sys.exit('stop is a positive dollar loss, e.g. stop=300')
+            body['stop_loss_amount'] = str(kv['stop'])  # the copy ends once its P&L (after fees, incl. open) reaches minus this
         if sub: body['sub_account_id'] = sub
         # Strike refuses a copy larger than the current balance ("invalid inputs"; confirmed 2026-10-05), in both modes
         # (the app shows "Insufficient available balance").
@@ -138,14 +141,34 @@ def main(a):
         elif yes:
             print('\nStrike refused it, so no subscription was created (nothing to stop or cap).')
     elif cmd == 'caps':
-        # max_margin_total is not in the spec; the field name comes from Strike's app, which sends both caps on every edit.
         body = {'max_margin_per_symbol': str(pos[1]), 'max_margin_total': str(pos[2])}
         if 'exclude' in kv: body['excluded_symbols'] = [x for x in kv['exclude'].upper().split(',') if x]
         if sub: body['sub_account_id'] = sub
         _send('PATCH', f'/v2/copy/subscribe/{pos[0]}', body, yes)
+    elif cmd == 'stop-loss':
+        if len(pos) < 2: sys.exit('say the subscription id and the dollar loss, e.g. stop-loss <id> 300 ("0" clears it)')
+        amt = float(pos[1])
+        if amt < 0: sys.exit('the stop loss is a positive dollar loss ("0" clears it)')
+        # Strike counts the stop from the copy's start and refuses a level the copy has already lost (400).
+        e = next((x for x in request('GET', '/v2/copy/subscriptions' + (f'?sub_account_id={sub}' if sub else '')).get('subscriptions') or []
+                  if x['subscription_id'] == pos[0]), None)
+        if not e or e.get('status') != 'active': sys.exit('No active subscription with that id on this account (add sub=<id> for a sub-account).')
+        pnl = float(e.get('pnl') or 0)
+        if amt and pnl <= -amt:
+            sys.exit(f'Not sent: this copy is already at {pnl:+,.2f}, so a ${amt:,.0f} stop would fire at once and Strike refuses it. '
+                     f'Pick more than ${-pnl:,.0f}.')
+        if amt: print(f'This copy is at {pnl:+,.2f} since it started. A ${amt:,.0f} stop ends it at {-amt:,.2f}, '
+                      f'after another ${amt + pnl:,.0f} of losses from here.\n')
+        body = {'stop_loss_amount': str(pos[1])}
+        if sub: body['sub_account_id'] = sub
+        _send('PATCH', f'/v2/copy/subscribe/{pos[0]}', body, yes)
     elif cmd == 'stop':
-        if len(pos) < 2 or pos[1] not in ('close', 'keep'): sys.exit('say "close" (close copied positions at market) or "keep" (leave them open as manual positions)')
-        q = f"?cancel_open_orders=true&close_open_positions={'true' if pos[1] == 'close' else 'false'}" + (f'&sub_account_id={sub}' if sub else '')
+        if len(pos) > 1 and pos[1] == 'keep':
+            sys.exit('Strike no longer keeps copied positions open on stop (spec v1.2.0: stop "always closes its copied open positions"). '
+                     'To stop new copies but keep what is open, exclude every market instead: caps <id> <per_symbol> <total> exclude=...')
+        # Spec v1.2.0 lists no options: stop always closes copied positions. cancel_open_orders isn't in the spec; it's sent
+        # in case the server still honours it (the app's stop doesn't cancel resting copied orders).
+        q = '?cancel_open_orders=true&close_open_positions=true' + (f'&sub_account_id={sub}' if sub else '')
         _send('DELETE', f'/v2/copy/subscribe/{pos[0]}{q}', None, yes)
     else:
         sys.exit(f'Unknown command "{cmd}".\n{__doc__}')
