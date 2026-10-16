@@ -11,6 +11,7 @@ leverage or margin mode drifted from your profile, your fee, and the referral di
 import sys, time, datetime, collections
 from common import F, DAY, get, hl, now_ms, day, markets, hl_map, load_profile, fee_rate, COPIER_CAP
 from strike_api import request
+from replay import hl_fills
 
 
 def main():
@@ -96,9 +97,11 @@ def lead_check(lead, NOW, flags):
     try:
         if lead.lower().startswith('0x'):
             to_sym = hl_map()
-            fl = hl({'type': 'userFillsByTime', 'user': lead.lower(), 'startTime': NOW - 30 * DAY, 'aggregateByTime': True}, list)
-            perp = [x for x in fl if not x['coin'].startswith('@')]; last = max((x['time'] for x in perp), default=0)
-            wk = [x for x in perp if x['time'] > NOW - 7 * DAY]
+            # userFillsByTime returns the OLDEST 2,000 fills from startTime, so one call made a busy lead look idle (16 Oct 2026).
+            # Last trade from userFills (the newest 2,000); the week's P&L from a paged fetch.
+            recent = hl({'type': 'userFills', 'user': lead.lower()}, list)
+            last = max((x['time'] for x in recent if not x['coin'].startswith('@')), default=0)
+            wk = [x for x in hl_fills(lead.lower(), NOW - 7 * DAY, NOW) if not x['coin'].startswith('@')]
             on = sum(F(x['closedPnl']) for x in wk if x['coin'] in to_sym); off = sum(F(x['closedPnl']) for x in wk if x['coin'] not in to_sym)
             share = sum(1 for x in wk if x['coin'] in to_sym) / len(wk) if wk else 0
             # The lead's own liquidations/ADL on Strike markets. Since 12 Oct 2026 Strike closes the copy by the same fraction.
@@ -225,7 +228,7 @@ def skip_report(subs, q, acct, NOW, flags):
         val = None; lead = e['lead_account_id'].lower()
         if lead.startswith('0x') and e['copy_mode'] == 'fixed_amount':
             try:
-                fl = hl({'type': 'userFillsByTime', 'user': lead, 'startTime': NOW - 8 * DAY, 'aggregateByTime': True}, list)
+                fl = hl_fills(lead, NOW - 8 * DAY, NOW)
                 first = {}
                 for x in sorted(fl, key=lambda x: x['time']): first.setdefault(str(x['oid']), x)
                 if not mids:
