@@ -20,7 +20,8 @@ Needs a profile (`profile.json` with a balance). If missing, run the `setup` ski
    - the verdict and the reason in plain words (CLAUDE.md rule 7: profit per $ of drawdown, smaller drawdown on ties),
      plus the volume disclosure line whenever compare.py prints it
    - the catch: every lead has one (losing months, concentration in one market, few copier slots, idle spells)
-   - settings: mode, margin per entry or copy amount, caps, exclusions, leverage to lock. Mention "max concurrent
+   - settings: mode, margin per entry or copy amount, caps, exclusions, leverage to lock (compare.py's pick, with its
+     liquidation count from the leverage check; say if it differs from the profile's). Mention "max concurrent
      entries" only for fixed margin (it's what sizes the margin per entry); it means nothing for fixed ratio.
    - Fixed ratio copy amounts are reserved from the balance: compare.py sizes each lead as if it were the only copy.
      If the user may copy more than one, say so and split it (e.g. two leads -> half the balance each, and re-run

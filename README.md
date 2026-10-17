@@ -141,7 +141,7 @@ After the key, Claude asks a few multiple-choice questions (pick an answer, or c
 | Question | Why it matters | Typical answer |
 |---|---|---|
 | How much will you fund the copy account with? | Sizes every trade and cap | $250 – $5,000 |
-| What leverage on every market? | Higher means liquidations come sooner | 10x |
+| What leverage should copies start from? | Higher means liquidations come sooner. The comparison tests 10x, 5x, 3x and 2x per trader and recommends one | 5x |
 | How much of the balance in open copies at once, at most? | Becomes your total cap | Half |
 | If the account dipped from its high, how big a dip could you sit through? | Traders who dipped further in replays get flagged | 20% |
 | Any markets to never copy? | Thin or meme markets slip more | e.g. PUMP-USD |
@@ -188,6 +188,12 @@ match the other, while a deep drop is hard to recover from and hard to sit throu
 
 Every recommendation also lists the **settings**: margin per entry (or copy amount), how many entries the trader
 tends to hold at once, caps, excluded markets, and the leverage to lock on their markets **before** you start.
+
+**Leverage is tested, not assumed.** The replay checks every hourly high and low against Strike's maintenance margin,
+so a copy that would have been liquidated is (isolated: its margin is lost; cross: every copy closes when the
+account runs out of room). Each trader is compared at 10x, 5x, 3x and 2x and the leverage with the most profit per $
+of drawdown is recommended, the lower one on a near-tie. Copying at 10x a trader who runs 2x means your copy gets
+liquidated on dips they hold through.
 
 ## 8. Setting up a copy
 

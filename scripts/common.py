@@ -41,7 +41,7 @@ def hl(body, want=None):
 
 
 # ---------- profile (answers from the setup questions; gitignored) ----------
-DEFAULTS = {'balance': None, 'leverage': 10, 'max_use': 0.5, 'max_dd': 0.25, 'excluded': [], 'sub_account_id': None,
+DEFAULTS = {'balance': None, 'leverage': 5, 'max_use': 0.5, 'max_dd': 0.25, 'excluded': [], 'sub_account_id': None,
             'account_id': None, 'review_day': 'Monday', 'mode_pref': 'either', 'referral_asked': None, 'margin_mode': 'isolated'}
 
 
@@ -65,7 +65,8 @@ def markets(refresh=False):
     """Strike's listed markets with their HL twin, minimum order and 24h volume. Cached for 12h in data/markets.json."""
     cache = DATA / 'markets.json'
     if not refresh and cache.exists() and time.time() - cache.stat().st_mtime < 12 * 3600:
-        return json.loads(cache.read_text())
+        out = json.loads(cache.read_text())
+        if all('tiers' in v for v in out.values()): return out  # caches from before margin tiers were stored get refreshed
     mk = get('/v2/markets').get('markets', {})
     if not mk: sys.exit('Could not read Strike markets (/v2/markets). Check your internet connection.')
     core = {u['name'] for u in hl({'type': 'meta'}, dict)['universe']}
@@ -76,9 +77,17 @@ def markets(refresh=False):
         if m.get('status') != 'trading': continue
         b = m['base_asset']
         coin = ALIASES.get(b) or (b if b in core else f'xyz:{b}' if f'xyz:{b}' in xyz else None)
-        out[sym] = {'base': b, 'hl': coin, 'min_notional': F(m.get('order_min_notional') or 10), 'vol24h': vol.get(sym, 0.0)}
+        tiers = [[F(t['max_notional']), F(t['max_leverage']), F(t['maintenance_margin_rate']), F(t.get('maintenance_amount') or 0)]
+                 for t in m.get('margin_tiers') or []] or [[1e18, 10.0, 0.025, 0.0]]
+        out[sym] = {'base': b, 'hl': coin, 'min_notional': F(m.get('order_min_notional') or 10), 'vol24h': vol.get(sym, 0.0), 'tiers': tiers}
     DATA.mkdir(exist_ok=True); cache.write_text(json.dumps(out, indent=1))
     return out
+
+
+def tier(m, notional):
+    """Strike margin tier for a position of this notional: (max leverage, maintenance margin in USD)."""
+    t = next((t for t in m['tiers'] if notional <= t[0]), m['tiers'][-1])
+    return t[1], max(notional * t[2] - t[3], 0.0)
 
 
 def hl_map(mk=None):

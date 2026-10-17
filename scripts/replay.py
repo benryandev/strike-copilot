@@ -1,6 +1,6 @@
 """Replay a lead as a Strike copier would have copied them, on a funded account, in either copy mode.
 
-  python3 scripts/replay.py <lead> [days=90] [acct=<usd>] [fm=<margin per entry>] [fr=<copy amount>] [lev=10] [cap=<usd/symbol>] [tcap=<usd total>] [ex=PUMP-USD,...] [mult=1-10] [min_entry=<usd>]
+  python3 scripts/replay.py <lead> [days=90] [acct=<usd>] [fm=<margin per entry>] [fr=<copy amount>] [lev=10 | levs=10,5,3,2] [mm=isolated|cross] [cap=<usd/symbol>] [tcap=<usd total>] [ex=PUMP-USD,...] [mult=1-10] [min_entry=<usd>]
 
 <lead> is a Hyperliquid 0x address or a Strike account id (uuid). Defaults come from profile.json.
 
@@ -14,11 +14,15 @@ How it works (each rule matches observed Strike behaviour):
 - An open is skipped when free margin is short, it is below the market's minimum order, a cap would be breached, or the market is excluded.
 - Fees: your own taker fee per side (from your portfolio). Closes land 10 bp worse (copy-cost allowance).
 - Open copies are marked at Hyperliquid 1h candle closes between orders, so drawdown includes open losses.
-Not modelled: liquidations (isolated: one position's margin; cross: drawn from the shared balance), funding payments.
-So the replay is the same for both margin modes; the difference is how a liquidation would play out.
+- Liquidations: every hourly candle's low (longs) or high (shorts) is checked against Strike's maintenance margin for that
+  market and position size (its live margin tiers). Isolated (default): a copy is one position per market; when its margin
+  plus open P&L at the worst price falls to maintenance, the whole margin is lost and the copy is gone until the lead's next
+  open. Cross: when the account's equity at the worst price falls to the summed maintenance, every copy closes at once.
+  Leverage is capped at each market's max. A copy opened inside an hour is checked against that whole hour (slightly harsh).
+Not modelled: funding payments, Strike's liquidation fee (roughly 3% of the lost margin on real copies).
 """
 import sys, time, bisect, collections
-from common import F, DAY, SLIP, get, hl, now_ms, day, markets, hl_map, load_profile, my_fee
+from common import F, DAY, SLIP, get, hl, now_ms, day, markets, hl_map, load_profile, my_fee, tier
 
 
 def is_hl(lead): return lead.lower().startswith('0x')
@@ -97,7 +101,7 @@ def marks(symbols, t0, now, mk, interval='1h'):
         coin = mk[s]['hl']
         if not coin: unmarked.append(s); continue
         k = hl({'type': 'candleSnapshot', 'req': {'coin': coin, 'interval': interval, 'startTime': t0, 'endTime': now}}, list)
-        out += [(x['T'], s, F(x['c'])) for x in k if x['T'] <= now]; time.sleep(0.2)
+        out += [(x['T'], s, F(x['c']), F(x['l']), F(x['h'])) for x in k if x['T'] <= now]; time.sleep(0.2)
     return out, unmarked
 
 
@@ -124,17 +128,26 @@ class Lead:
             return s
         return size
 
-    def run(self, start, size, lev=10, fee=None, cap=0, tcap=0, excluded=()):
-        return replay(self.orders, self.marks, start, size, lev, my_fee() if fee is None else fee, cap, tcap, set(excluded), self.mk)
+    def run(self, start, size, lev=10, fee=None, cap=0, tcap=0, excluded=(), margin_mode='isolated'):
+        return replay(self.orders, self.marks, start, size, lev, my_fee() if fee is None else fee, cap, tcap, set(excluded), self.mk, margin_mode)
 
 
-def replay(orders, mk_marks, start, size, lev, fee, cap, tcap, excluded, mk):
+def replay(orders, mk_marks, start, size, lev, fee, cap, tcap, excluded, mk, margin_mode='isolated'):
     lp = collections.defaultdict(float); cq = collections.defaultdict(float); ce = collections.defaultdict(float)
     last = {}; cash = start; pk = start; dd = 0.0; low = start; used_pk = 0.0; realised = fees = vol = 0.0; wiped = None
     n = collections.Counter(); sym_pk = collections.defaultdict(float); entries_pk = 0; lots = collections.Counter()
-    ev = sorted([(o['t'], 1, o) for o in orders] + [(t, 0, (c, p)) for t, c, p in mk_marks], key=lambda e: (e[0], e[1]))
+    mg = collections.defaultdict(float); liqs = []; liq_loss = 0.0  # mg: margin posted per copy (isolated)
+    ev = sorted([(o['t'], 1, o) for o in orders] + [(t, 0, (c, p, lo, hi)) for t, c, p, lo, hi in mk_marks], key=lambda e: (e[0], e[1]))
     eqf = lambda: cash + sum(cq[k] * (last[k] - ce[k]) for k in cq if cq[k])
     usedf = lambda: sum(abs(cq[k]) * last[k] / lev for k in cq if cq[k])
+    levc = lambda c: min(lev, tier(mk[c], 0)[0])  # the market's max leverage caps the setting
+    maint = lambda c, px: tier(mk[c], abs(cq[c]) * px)[1]
+
+    def liquidate(c, px, t):
+        nonlocal cash, realised, liq_loss
+        pnl = -mg[c] if margin_mode == 'isolated' else cq[c] * (px - ce[c])
+        cash += pnl; realised += pnl; liq_loss -= pnl; liqs.append((c, day(t), round(-pnl)))
+        cq[c] = 0.0; mg[c] = 0.0; lots[c] = 0
 
     def try_open(c, add, px):
         nonlocal cash, fees, vol
@@ -144,15 +157,23 @@ def replay(orders, mk_marks, start, size, lev, fee, cap, tcap, excluded, mk):
                else 'capped' if (cap and m(c) + abs(add) * px / lev > cap) or (tcap and sum(m(k) for k in cq if cq[k]) + abs(add) * px / lev > tcap)
                else 'no_margin' if eqf() - usedf() < abs(add) * px / lev else None)
         if why: n[why] += 1; return False
-        ce[c] = (ce[c] * cq[c] + add * px) / (cq[c] + add) if cq[c] + add else px; cq[c] += add
+        ce[c] = (ce[c] * cq[c] + add * px) / (cq[c] + add) if cq[c] + add else px; cq[c] += add; mg[c] += abs(add) * px / levc(c)
         cash -= abs(add) * px * fee; fees += abs(add) * px * fee; vol += abs(add) * px; n['taken'] += 1; lots[c] += 1
         return True
 
     for t, kind, o in ev:
         if wiped: break
         if kind == 0:
-            c, p = o
-            if cq[c]: last[c] = p
+            c, p, lo, hi = o
+            if cq[c]:
+                worst = lo if cq[c] > 0 else hi
+                if margin_mode == 'isolated':
+                    if mg[c] + cq[c] * (worst - ce[c]) <= maint(c, worst): liquidate(c, worst, t)
+                else:
+                    px = {k: (worst if k == c else last[k]) for k in cq if cq[k]}
+                    if cash + sum(cq[k] * (px[k] - ce[k]) for k in px) <= sum(maint(k, px[k]) for k in px):
+                        for k in px: liquidate(k, px[k], t)
+                if cq[c]: last[c] = p
         else:
             c, q = o['c'], o['q']
             if not q: continue
@@ -164,12 +185,12 @@ def replay(orders, mk_marks, start, size, lev, fee, cap, tcap, excluded, mk):
                 if cq[c]:
                     side = 1 if cq[c] > 0 else -1; cl = cq[c] * frac; xp = px * (1 - SLIP * side)
                     pnl = cl * (xp - ce[c]) - abs(cl) * xp * fee
-                    cash += pnl; realised += pnl; fees += abs(cl) * xp * fee; vol += abs(cl) * xp; cq[c] -= cl
+                    cash += pnl; realised += pnl; fees += abs(cl) * xp * fee; vol += abs(cl) * xp; cq[c] -= cl; mg[c] *= 1 - frac
                 rem = q + lp[c] if abs(q) > abs(lp[c]) else 0.0
                 lp[c] = lp[c] + q if not rem else 0.0
-                if abs(lp[c]) < 1e-12: lp[c] = 0.0; cq[c] = 0.0; lots[c] = 0
+                if abs(lp[c]) < 1e-12: lp[c] = 0.0; cq[c] = 0.0; lots[c] = 0; mg[c] = 0.0
                 if rem:
-                    cq[c] = 0.0; lots[c] = 0
+                    cq[c] = 0.0; lots[c] = 0; mg[c] = 0.0
                     try_open(c, size(rem, px, t), px); lp[c] = rem
         if cq.get(c): sym_pk[c] = max(sym_pk[c], abs(cq[c]) * ce[c] / lev)
         entries_pk = max(entries_pk, sum(v for k, v in lots.items() if cq[k]))
@@ -178,7 +199,8 @@ def replay(orders, mk_marks, start, size, lev, fee, cap, tcap, excluded, mk):
     eq = eqf()
     return dict(net=eq - start, realised=realised, open=eq - start - realised, dd=dd, dd_pct=dd / start if start else 0, low=low,
                 peak_margin=used_pk, peak_entries=entries_pk, sym_pk=dict(sym_pk), fees=fees, volume=vol, wiped=wiped,
-                taken=n['taken'], skipped=dict((k, v) for k, v in n.items() if k != 'taken'),
+                taken=n['taken'], skipped=dict((k, v) for k, v in n.items() if k != 'taken'), lev=lev, margin_mode=margin_mode,
+                liquidations=len(liqs), liq_loss=liq_loss, liq_list=liqs,
                 open_now={k: round(cq[k] * last[k]) for k in cq if cq[k]})
 
 
@@ -186,6 +208,7 @@ def fmt(label, r, acct):
     sk = ', '.join(f'{v} {k}' for k, v in r['skipped'].items())
     return (f"{label}: net {r['net']:+,.0f} ({r['net'] / acct * 100:+.1f}%), lowest point ${r['low']:,.0f}, max drop {r['dd']:+,.0f} ({r['dd_pct'] * 100:.0f}%), "
             f"peak margin ${r['peak_margin']:,.0f}, fees ${r['fees']:,.0f} on ${r['volume']:,.0f} volume, {r['taken']} entries" + (f" (skipped: {sk})" if sk else '')
+            + (f", {r['liquidations']} liquidations (-${r['liq_loss']:,.0f})" if r['liquidations'] else ', no liquidations')
             + (f", WIPED OUT {r['wiped']}" if r['wiped'] else ''))
 
 
@@ -193,13 +216,16 @@ if __name__ == '__main__':
     if len(sys.argv) < 2: sys.exit(__doc__)
     p = load_profile(required=False); kv = dict(x.split('=', 1) for x in sys.argv[2:] if '=' in x)
     acct = F(kv.get('acct') or p['balance'] or 1000); lev = F(kv.get('lev') or p['leverage'] or 10)
+    mm = kv.get('mm') or p.get('margin_mode') or 'isolated'
+    levs = [F(x) for x in kv['levs'].split(',')] if kv.get('levs') else [lev]
     ex = [s for s in kv.get('ex', ','.join(p['excluded'])).split(',') if s]
     L = Lead(sys.argv[1], F(kv.get('days', 90)))
     print(f"lead {L.lead}: {len(L.orders)} orders on Strike markets in the last {kv.get('days', 90)} days ({', '.join(s[:-4] for s in L.symbols)}), "
-          f"account ${acct:,.0f}, {lev:.0f}x, fee {my_fee() * 100:.4f}%/side" + (f"; marked at fills only: {L.unmarked}" if L.unmarked else ''))
+          f"account ${acct:,.0f}, {mm}, fee {my_fee() * 100:.4f}%/side" + (f"; marked at fills only, no liquidation check: {L.unmarked}" if L.unmarked else ''))
     cap, tcap = F(kv.get('cap', 0)), F(kv.get('tcap', 0))
-    if kv.get('fm'): print(fmt(f"fixed margin ${F(kv['fm']):,.0f}/entry", L.run(acct, L.fm(F(kv['fm']), lev), lev, cap=cap, tcap=tcap, excluded=ex), acct))
-    if kv.get('fr'):
-        mult, mn = F(kv.get('mult', 1)), F(kv.get('min_entry', 0))
-        lab = f"fixed ratio ${F(kv['fr']):,.0f}" + (f" x{mult:g}" if mult != 1 else '') + (f", min entry ${mn:,.0f}" if mn else '')
-        print(fmt(lab, L.run(acct, L.fr(F(kv['fr']), mult, mn), lev, cap=cap, tcap=tcap, excluded=ex), acct))
+    for lv in levs:
+        if kv.get('fm'): print(fmt(f"{lv:g}x fixed margin ${F(kv['fm']):,.0f}/entry", L.run(acct, L.fm(F(kv['fm']), lv), lv, cap=cap, tcap=tcap, excluded=ex, margin_mode=mm), acct))
+        if kv.get('fr'):
+            mult, mn = F(kv.get('mult', 1)), F(kv.get('min_entry', 0))
+            lab = f"{lv:g}x fixed ratio ${F(kv['fr']):,.0f}" + (f" x{mult:g}" if mult != 1 else '') + (f", min entry ${mn:,.0f}" if mn else '')
+            print(fmt(lab, L.run(acct, L.fr(F(kv['fr']), mult, mn), lv, cap=cap, tcap=tcap, excluded=ex, margin_mode=mm), acct))

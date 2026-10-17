@@ -2,7 +2,7 @@
 
   python3 scripts/profile.py show
   python3 scripts/profile.py link                       read your account id from the API key (run after the key is added on Strike)
-  python3 scripts/profile.py set balance=1000 leverage=10 max_use=0.5 max_dd=0.25 excluded=PUMP-USD,NIGHT-USD sub_account_id=<id>
+  python3 scripts/profile.py set balance=1000 leverage=5 max_use=0.5 max_dd=0.25 excluded=PUMP-USD,NIGHT-USD sub_account_id=<id>
 
 Fields:
   balance      USD you will fund the copy account with

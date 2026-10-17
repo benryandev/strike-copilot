@@ -36,6 +36,8 @@ without a one-line explanation. Never assume their answers: ask.
 6. **Every recommendation states:** mode (fixed margin or fixed ratio), margin per entry or copy amount, max
    concurrent entries, per-symbol and total caps, excluded markets, and the leverage + margin mode (profile `margin_mode`, isolated by default) to lock
    on the lead's markets **before** subscribing (Strike locks a market's leverage at its first trade).
+   **Leverage comes from compare.py's leverage check** (10x, 5x, 3x, 2x with liquidations modelled), never assumed:
+   a copy at more leverage than the lead's own is liquidated on moves the lead rides out.
 7. **Mode verdict comes from `compare.py`, net of the user's own fees, and favours the smaller drawdown.** Score =
    profit per $ of drawdown. Clearly better score wins; within 10%, the smaller drawdown wins; if the 90- and 30-day
    windows disagree, the smaller 90-day drawdown wins. If both modes lose, recommend neither. Whenever the recommended

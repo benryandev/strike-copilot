@@ -14,7 +14,10 @@ numbered steps with your exact numbers. No "(Recommended)" here: both are fine.
 
 ## A. Through the API (every step: dry run, explain, change menu from CLAUDE.md rule 4, then --yes)
 Tell the user up front how many changes there are (e.g. 4) and number each menu "Change 1/4" and so on.
-1. Lock leverage and margin mode (`margin_mode` in profile.json, isolated by default) on the lead's markets (from the compare output, minus excluded ones):
+1. Lock leverage and margin mode (`margin_mode` in profile.json, isolated by default) on the lead's markets (from the compare output, minus excluded ones).
+   Use the leverage compare.py picked for this lead (its "leverage check" table, `leverage` in data/compare/<lead>.json),
+   not the profile's, and show the table's row for it (net, max drop, liquidations). If the pick differs from the
+   profile, also save it: `python3 scripts/profile.py set leverage=<pick>` (account.py checks drift against the profile).
    `python3 scripts/strike_api.py set-margin-mode <isolated|cross> BTC-USD,ETH-USD,... [sub=<id>]` then
    `python3 scripts/strike_api.py set-leverage <lev> BTC-USD,ETH-USD,... [sub=<id>]`.
    Explain: a market with an open position keeps its old setting until it's flat.

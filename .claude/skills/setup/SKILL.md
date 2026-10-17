@@ -50,9 +50,11 @@ description of what it means for them. Two rounds:
 1. Balance, header "Balance": "How much will you fund the copy account with?" Options: $250, $500, $1,000, $5,000
    (no recommendation; "Other" covers any amount, e.g. $10,000). Description: sizes every suggestion. Four options is
    the tool's limit; the set matches real copiers (median active copier holds ~$435, 5 Oct 2026).
-2. Leverage, header "Leverage": "What leverage should every market use?" Options: 10x (Recommended): each copy ties up
-   a tenth of its size as margin; 5x: further from liquidation, needs twice the margin; 3x: very conservative;
-   20x: liquidation comes much sooner.
+2. Leverage, header "Leverage": "What leverage should copies start from? The comparison later tests 10x, 5x, 3x and 2x
+   against each trader, liquidations included, and recommends one per trader." Options: 5x (Recommended): a middle
+   starting point until a trader is tested; 3x: furthest from liquidation, ties up the most margin per copy; 10x: each
+   copy ties up a tenth of its size, but sharp moves liquidate it sooner; 20x: liquidated on small moves. Don't
+   present 10x as the default: a copy at higher leverage than the trader's own is liquidated on moves the trader rides out.
 3. Max in use, header "Max in use": "At most, how much of the balance should be in open copies at once?" Options:
    50% (Recommended): half stays free as a buffer; 25%: very cautious, fewer copies fit; 75%: more copies fit,
    less buffer. Becomes the total cap.
