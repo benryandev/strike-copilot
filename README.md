@@ -7,6 +7,8 @@ chatting with Claude.
 > liquidations. Past results don't predict future ones. Only use money you can afford to lose.
 > This project is independent and not affiliated with Strike Finance.
 
+**Related tools:** [Copilot Check](https://github.com/benryandev/copilot-check) ([try it](https://strike.benryan.com.au)) shows whether a Hyperliquid wallet is worth copying on Strike, and paper-copies it before you risk money. [Copilot Watch](https://github.com/benryandev/copilot-watch) ([Telegram](https://t.me/CopilotWatchBot)) sends Telegram and Discord alerts when a copy needs a look. Neither needs an install or an API key.
+
 ---
 
 ## Contents
