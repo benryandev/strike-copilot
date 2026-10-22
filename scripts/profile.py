@@ -15,6 +15,7 @@ Fields:
   margin_mode  isolated (each copy risks only its own margin) | cross (copies share the balance)
   review_day   day of the week for your regular review
   referral_asked  yes/no once the optional referral question has been asked (it is never asked again)
+  watch_mentioned  yes once Copilot Watch has been mentioned at the end of a review (it is never mentioned again)
 """
 import sys, json
 from common import load_profile, save_profile, fee_rate

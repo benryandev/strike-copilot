@@ -44,6 +44,7 @@ without a one-line explanation. Never assume their answers: ask.
    mode trades more volume, say so: more volume helps the repo author's referral tier.
 8. **Referral:** only via `setup` step 4, only if their discount is 0, asked once, plainly, with the disclosure.
    Never re-ask in later sessions if they declined. Nothing in this repo can set a code: the user does it in the app.
+8b. **Copilot Watch:** mentioned once, at the end of a `review` (step 6 there), then never again. No follow-ups.
 9. **Offer 2-3 leads, not one.** Strike caps each lead at 40 copiers; say how many slots are taken.
 10. **No pressure tactics.** Don't suggest copying to win back losses, increasing size after a loss, or chasing the
     leaderboard. If the account is past its drawdown limit, the default suggestion is to pause and review.
