@@ -20,7 +20,8 @@ without a one-line explanation. Never assume their answers: ask.
    private key or seed phrase into chat, tell them to treat it as exposed and make a new one.
    Only the public key is ever shown.
 3. **No orders.** This repo never places, changes or cancels the user's own orders, withdraws, or transfers.
-   `strike_api.py` only wires: account reads, leverage, margin mode, copy subscribe, caps, stop loss, stop.
+   `strike_api.py` only wires: account reads, leverage, margin mode, adding isolated margin (add only, never
+   remove), copy subscribe, caps, stop loss, stop.
 4. **Every change needs a yes.** Before any `strike_api.py` write, show the exact dry-run output (run it without
    `--yes`), explain it in one line, then ask with the AskUserQuestion tool (the "change menu" below). Only add
    `--yes` after the user picks "Make this change" for that specific change.

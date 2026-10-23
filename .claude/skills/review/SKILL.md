@@ -40,7 +40,9 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
    - Copy close to its stop loss: say how far off it is and that the stop closes everything at market. Moving the
      stop further away to avoid it firing is the user's call; don't suggest it.
    - Copy near liquidation (under 3%): the user decides, add isolated margin or let it go. Don't push either way;
-     adding margin to a losing copy is the user's call, not a fix.
+     adding margin to a losing copy is the user's call, not a fix. Suggest an amount only if they ask. To add it,
+     dry-run `strike_api.py add-margin <SYM-USD> <usd> [sub=<id>]` (it shows the new liquidation price), then the
+     change menu. It's isolated only; on a cross position the whole balance is already the margin.
    - People copying the user: mention it once, so they know changes to this account reach their copiers too.
    - Leverage drift: offer the fix (dry run first).
 4. If nothing needs attention, say so in one line. Don't invent tasks.

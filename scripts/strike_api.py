@@ -8,6 +8,7 @@
 Changes (each prints the exact request and does nothing unless you add --yes):
   set-leverage <10> [SYM-USD,...|all] [sub=<id>]           leverage for FUTURE positions (a market with an open position keeps its old setting)
   set-margin-mode <isolated|cross> [SYM-USD,...|all] [sub=<id>]
+  add-margin <SYM-USD> <usd> [sub=<id>]                    add margin to an open isolated position (moves its liquidation price away; add only)
   subscribe <lead> margin=<usd>|ratio=<usd> [platform=hyperliquid|strike] [cap=<usd/symbol>] [tcap=<usd total>] [exclude=A-USD,B-USD]
             [min_entry=<usd>] [mult=<1-10>] [stop=<usd>] [sub=<id>]      (min_entry and mult: fixed ratio only)
   caps <subscription_id> <per_symbol_usd> <total_usd> [exclude=A-USD,...] [sub=<id>]     ("0" clears a cap)
@@ -104,6 +105,38 @@ def main(a):
             if sub: body['sub_account_id'] = sub
             _send('POST', '/v2/leverage' if cmd == 'set-leverage' else '/v2/marginMode', body, yes)
             if yes: time.sleep(0.2)
+    elif cmd == 'add-margin':
+        # Add only: removing margin brings liquidation closer, so it isn't wired.
+        if len(pos) < 2: sys.exit('say the market and the dollars to add, e.g. add-margin BTC-USD 50')
+        sym = pos[0].upper() if pos[0].upper().endswith('-USD') else pos[0].upper() + '-USD'
+        try: amt = float(pos[1])
+        except ValueError: sys.exit('the amount is in dollars, e.g. add-margin BTC-USD 50')
+        if amt <= 0: sys.exit('the amount to add must be more than 0')
+        q = f'?sub_account_id={sub}' if sub else ''
+        r = request('GET', '/v2/positions' + q)
+        x = next((p for p in (r.get('positions') if isinstance(r, dict) else None) or [] if p.get('symbol') == sym), None)
+        if not x or not float(x.get('size') or 0):
+            sys.exit(f'No open {sym} position on this account (add sub=<id> for a sub-account).')
+        if x.get('margin_mode') != 'isolated':
+            sys.exit(f'Not sent: the {sym} position is cross margin, which already uses your whole balance. Margin can only be added to isolated positions.')
+        acct = request('GET', '/v2/account' + q)
+        avail = float(acct.get('available_balance') or 0) if isinstance(acct, dict) else 0.0
+        if amt > avail:
+            sys.exit(f'Not sent: ${amt:,.2f} is more than your available balance (${avail:,.2f}).')
+        size, liq, entry = float(x['size']), float(x.get('liquidation_price') or 0), float(x['entry_price'])
+        mark = entry + float(x.get('upnl') or 0) / size  # /v2/positions has no mark price
+        # Isolated: maintenance margin depends on size and mark, not on the margin held, so each extra dollar
+        # moves liquidation by 1/size in price. An estimate: Strike recalculates it on the next mark.
+        new_liq = liq - amt / size
+        far = lambda l: abs(mark - l) / mark * 100
+        px = lambda v: f'{v:,.2f}' if v >= 100 else f'{v:.4g}'
+        print(f"{sym} {'long' if size > 0 else 'short'} {abs(size):g}: margin ${float(x.get('iso_balance') or 0):,.2f}, mark about {px(mark)}, "
+              f"liquidation {px(liq)} ({far(liq):.1f}% away).\n"
+              f"Adding ${amt:,.2f} moves liquidation to about {px(new_liq)} ({far(new_liq):.1f}% away). "
+              f"Available balance after: ${avail - amt:,.2f}.\n")
+        body = {'symbol': sym, 'modify_type': 'add', 'amount': str(pos[1])}
+        if sub: body['sub_account_id'] = sub
+        _send('POST', '/v2/isoMargin', body, yes)
     elif cmd == 'subscribe':
         lead = pos[0]
         body = {'lead_account_id': lead.lower() if lead.startswith('0x') else lead,

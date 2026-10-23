@@ -58,7 +58,7 @@ def main():
             d = liq_dist(x)
             print(f"      {x['market']:12} {x['side']:5} margin ${F(x['collateral']):>7,.0f}  {x['margin_mode']} {x['leverage']}x  P&L {F(x['pnl']):+9,.2f}"
                   + (f"  liquidation {d:.1f}% away" if d < 999 else ''))
-            if d < 3: flags.append(f"{x['market']} {x['side']} copy is {d:.1f}% from liquidation (margin ${F(x['collateral']):,.0f}). Decide now: add isolated margin, or let it go.")
+            if d < 3: flags.append(f"{x['market']} {x['side']} copy is {d:.1f}% from liquidation (margin ${F(x['collateral']):,.0f}). Decide now: add isolated margin (strike_api.py add-margin), or let it go.")
         lead_check(e['lead_account_id'], NOW, flags)
     stopped_by_strike(q, NOW, flags)
 

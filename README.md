@@ -123,7 +123,8 @@ What happens:
    ![Strike API keys page: name, public key, days to expire, Authorize](docs/images/api-keys.png)
 4. Tell Claude "done". It checks the key works (`strike_api.py whoami`).
 
-**What the key can do:** read your account, change leverage and margin settings, and manage copy subscriptions.
+**What the key can do:** read your account, change leverage and margin settings, add margin to an open isolated position
+(never remove it), and manage copy subscriptions.
 Strike labels these keys as able to trade, but **they can't withdraw funds**. This tool deliberately doesn't wire up
 any trading of your own positions.
 
@@ -261,6 +262,7 @@ Copy and paste these into Claude inside the `strike-copilot` folder.
 | Stop copying someone | `Stop my copy of 0x...` (Strike closes the copied positions) |
 | Pause new copies, keep what's open | `Pause new copies from 0x... but keep the open positions` |
 | Set a stop loss on a copy | `Set a $300 stop loss on my copy of 0x...` |
+| Add margin to a copy near liquidation | `Add $50 margin to my BTC position` (shows the new liquidation price first) |
 | Change my settings | `Change my balance to $2,000 and exclude PUMP-USD` |
 | Update the tool | `Check for updates` |
 
