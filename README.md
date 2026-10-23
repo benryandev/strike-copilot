@@ -42,6 +42,8 @@ This repo gives Claude the tools and rules to:
 - **Recommend settings**: how much per trade, caps, which markets to exclude, what leverage to lock first.
 - **Set the copy up for you** (only after you say yes to each change) or give you the steps to do it yourself.
 - **Review your account** each week and flag anything that needs a decision.
+- **Check your open positions' risk**: what a sudden 5–20% move would do, stock and commodity positions sitting closer
+  to liquidation than past weekends have moved, and copies holding opposite sides of the same market.
 
 It **never**:
 - places, changes or cancels your own trades
@@ -259,6 +261,8 @@ Copy and paste these into Claude inside the `strike-copilot` folder.
 | Set caps myself in the app | `Show me how to set caps manually in the Strike app` |
 | Set up a copy | `Set up the copy for 0x... using fixed margin` |
 | Weekly check | `Review my account` |
+| What if the market drops? | `Run a risk check` (price shocks, weekend gaps, copies on opposite sides) |
+| Before a weekend | `Which of my stock or gold positions could a weekend gap liquidate?` |
 | Stop copying someone | `Stop my copy of 0x...` (Strike closes the copied positions) |
 | Pause new copies, keep what's open | `Pause new copies from 0x... but keep the open positions` |
 | Set a stop loss on a copy | `Set a $300 stop loss on my copy of 0x...` |

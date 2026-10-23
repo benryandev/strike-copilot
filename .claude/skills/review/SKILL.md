@@ -20,6 +20,8 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
      fills, portfolio, leverage, margin mode). Suggest checking GitHub for a repo update.
 2. `python3 scripts/account.py` and explain the result in plain English: balance, drop from peak vs their
    limit, each subscription's P&L, what each lead did this week.
+   Then `python3 scripts/risk.py --all` (read-only): a price-shock table, weekend gaps on stock/index/commodity
+   positions, and copies on opposite sides. Summarise it in two or three lines; its flags join the list below.
 3. Act on "Needs attention" items calmly, one at a time:
    - Past drawdown limit: suggest pausing new copies (exclude every market, or lower caps) and re-checking the lead
      with `check-trader`. Don't suggest adding funds or switching to win it back.
@@ -43,6 +45,12 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
      adding margin to a losing copy is the user's call, not a fix. Suggest an amount only if they ask. To add it,
      dry-run `strike_api.py add-margin <SYM-USD> <usd> [sub=<id>]` (it shows the new liquidation price), then the
      change menu. It's isolated only; on a cross position the whole balance is already the margin.
+   - A 5% move would liquidate something: name it and its margin. Same choice as near liquidation above.
+   - Weekend gap: a stock, index or commodity position is closer to liquidation than the worst weekend move in the
+     last 12. Say it before Friday's US close if possible. The user decides: add isolated margin, or accept the
+     risk. Don't suggest closing the copy over it, and don't call any amount safe: past weekends don't cap the next.
+   - Opposite sides: two copies (or accounts) long and short the same market. The overlapping part earns nothing
+     while both copies pay fees. Often fine (two leads trading independently); mention it, don't push a change.
    - People copying the user: mention it once, so they know changes to this account reach their copiers too.
    - Leverage drift: offer the fix (dry run first).
 4. If nothing needs attention, say so in one line. Don't invent tasks.

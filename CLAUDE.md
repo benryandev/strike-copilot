@@ -67,6 +67,10 @@ without a one-line explanation. Never assume their answers: ask.
   app.strikefinance.org/api-keys. Keys can trade but can't withdraw. Keys never expire unless the user sets "Days to expire" (suggest 90). Never press Strike's "Generate" button:
   that makes the key in the browser and this repo never gets the private half.
 - Leverage changes apply to future positions only; a market with an open position silently keeps its old setting.
+- Stock, index and commodity marks keep moving over the weekend (checked on TSLA, gold and oil, 16–19 Oct 2026),
+  then meet the real market at Monday's open. `risk.py` measures that whole Friday-close-to-Monday-open move.
+- A few copy fills come back from `/v2/history/fill` without `client_order_id` (two copy closes on 19–20 Oct 2026),
+  and those orders were missing from `/v2/copy/orders` too. Don't treat an untagged fill as proof it wasn't a copy.
 - Fixed ratio sizes each copy off the lead's whole equity (Hyperliquid spot + perp). Against a large lead the
   ratio is tiny; if the lead withdraws, every later copy gets bigger.
 - Fixed margin opens one entry per lead order, so a lead who adds often stacks many entries: margin per entry x
