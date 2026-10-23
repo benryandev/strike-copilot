@@ -89,7 +89,9 @@ def main(a):
     kv, pos, yes = _opts(rest); sub = kv.get('sub')
     if cmd == 'keygen': keygen()
     elif cmd == 'pubkey': print(pubkey())
-    elif cmd == 'get': print(json.dumps(request('GET', pos[0]), indent=1)[:20000])
+    elif cmd == 'get':  # the path itself may contain '=' (a query string), so take it as given
+        if not rest: sys.exit('say the path, e.g. get /v2/positions')
+        print(json.dumps(request('GET', rest[0]), indent=1)[:20000])
     elif cmd == 'whoami':
         r = request('GET', '/v2/account')
         if not isinstance(r, dict) or 'account_id' not in r:
