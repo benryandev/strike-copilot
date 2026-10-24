@@ -28,6 +28,7 @@ without a one-line explanation. Never assume their answers: ask.
    **Change menu** (single choice, header "Change N/M"): "Make this change" / "Skip this one" / "Explain more" /
    "Stop setting up". Never mark any option "(Recommended)" on a change that touches the account: the choice is
    the user's. "Explain more" answers, then shows the same menu again. Stopping a copy uses its own menu (see rule 4b).
+   Every `--yes` change is logged to `~/.strike-copilot/changes.jsonl`; `strike_api.py changes` shows the last ones.
 4b. **Stopping a copy** always asks (AskUserQuestion, header "Open trades"): "Stop and close the copied positions"
    (Strike sells them at market, gains or losses become final) / "Pause new copies instead" (exclude every market
    with `caps ... exclude=`: nothing new opens, open copies still close when the lead closes) / "Don't stop the copy".

@@ -41,6 +41,8 @@ This repo gives Claude the tools and rules to:
 - **Compare the two copy modes** (fixed margin and fixed ratio) on the same trader and tell you which did better.
 - **Recommend settings**: how much per trade, caps, which markets to exclude, what leverage to lock first.
 - **Set the copy up for you** (only after you say yes to each change) or give you the steps to do it yourself.
+  Each change it sends is logged on your computer with the values before and after, so you can look back at what
+  changed and when.
 - **Review your account** each week and flag anything that needs a decision.
 - **Check your open positions' risk**: what a sudden 5–20% move would do, stock and commodity positions sitting closer
   to liquidation than past weekends have moved, and copies holding opposite sides of the same market.
@@ -210,7 +212,9 @@ POST /v2/copy/subscribe
 {"lead_account_id": "0x1a2b...", "copy_mode": "fixed_amount", "margin_per_entry_order": "55", ...}
 DRY RUN: nothing sent. Add --yes to send it.
 ```
-Nothing is sent until you pick "Make this change". Order of steps: set your margin mode and leverage on the
+Nothing is sent until you pick "Make this change". Each change that's sent is added to a log on your computer
+(`~/.strike-copilot/changes.jsonl`: time, account, what was sent, values before and after, Strike's reply; dry runs
+aren't logged). Order of steps: set your margin mode and leverage on the
 trader's markets, then subscribe (with both caps and your excluded markets).
 
 **Yourself in the app:** Claude gives numbered steps with your exact numbers, using these screens. On the trader's
@@ -268,6 +272,7 @@ Copy and paste these into Claude inside the `strike-copilot` folder.
 | Set a stop loss on a copy | `Set a $300 stop loss on my copy of 0x...` |
 | Add margin to a copy near liquidation | `Add $50 margin to my BTC position` (shows the new liquidation price first) |
 | Change my settings | `Change my balance to $2,000 and exclude PUMP-USD` |
+| What did I change? | `Show my recent changes` (from the local change log) |
 | Update the tool | `Check for updates` |
 
 ## 11. Troubleshooting and FAQ

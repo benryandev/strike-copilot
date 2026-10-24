@@ -14,6 +14,11 @@ Changes (each prints the exact request and does nothing unless you add --yes):
   caps <subscription_id> <per_symbol_usd> <total_usd> [exclude=A-USD,...] [sub=<id>]     ("0" clears a cap)
   stop-loss <subscription_id> <usd> [sub=<id>]             end the copy once its P&L reaches -<usd> ("0" clears it)
   stop <subscription_id> [sub=<id>]                        stop copying; Strike closes the copied positions at market
+  changes [n]                                              the last n changes sent with --yes (default 20), from the local log
+
+Every change sent with --yes is appended to ~/.strike-copilot/changes.jsonl: when, which account, what was sent,
+the values before and after where Strike reports them (read straight after sending; a liquidation price can still move on
+Strike's next mark update), and Strike's reply. Dry runs aren't logged. The log stays on this computer.
 
 What this tool can never do: place, change or cancel your own orders, withdraw, or transfer funds.
 Strike API keys can't withdraw by design, and order endpoints are deliberately not wired here.
@@ -23,6 +28,7 @@ from pathlib import Path
 from common import STRIKE_API, ROOT, markets
 
 KEYFILE = Path(os.environ.get('STRIKE_KEYFILE') or ROOT / '.secrets' / 'strike_api.key')  # env override: keep the key somewhere else
+LOG = Path(os.environ.get('STRIKE_COPILOT_LOG') or Path.home() / '.strike-copilot' / 'changes.jsonl')  # outside the repo: survives updates, never committed
 
 
 def keygen():
@@ -71,11 +77,49 @@ def _opts(args):
     return kv, [a for a in args if '=' not in a and a != '--yes'], '--yes' in args
 
 
-def _send(method, path, body, yes):
+def _send(method, path, body, yes, cmd=None, before=None, after=None):
+    """Print the request; with yes, send it and log it. before: values read first; after: a function that re-reads them."""
     print(f'{method} {path}' + (f'\n{json.dumps(body, indent=1)}' if body is not None else ''))
     if not yes:
         print('\nDRY RUN: nothing sent. Add --yes to send it.'); return None
-    r = request(method, path, body); print(json.dumps(r, indent=1)); return r
+    r = request(method, path, body); print(json.dumps(r, indent=1))
+    acct = (body or {}).get('sub_account_id') or (path.split('sub_account_id=')[1].split('&')[0] if 'sub_account_id=' in path else 'main')
+    rec = {'at': time.strftime('%Y-%m-%dT%H:%M:%S%z'), 'account': acct, 'cmd': cmd, 'method': method, 'path': path, 'body': body,
+           'before': before, 'reply': r if len(json.dumps(r)) < 2000 else str(r)[:2000]}
+    if after:
+        try: rec['after'] = after()
+        except Exception as e: rec['after'] = f'could not re-read: {e}'
+    try:
+        LOG.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        with open(LOG, 'a') as f: f.write(json.dumps(rec) + '\n')
+    except OSError as e:
+        print(f'(Sent, but the change log could not be written: {e})')
+    return r
+
+
+def _position(sym, sub):
+    """The open position's margin and liquidation price, or None."""
+    r = request('GET', '/v2/positions' + (f'?sub_account_id={sub}' if sub else ''))
+    x = next((p for p in (r.get('positions') if isinstance(r, dict) else None) or [] if p.get('symbol') == sym), None)
+    return {k: x.get(k) for k in ('size', 'margin_mode', 'leverage', 'iso_balance', 'liquidation_price')} if x else None
+
+
+def _subscription(sid, sub):
+    """A copy subscription's settings and P&L, or None."""
+    r = request('GET', '/v2/copy/subscriptions' + (f'?sub_account_id={sub}' if sub else ''))
+    e = next((x for x in (r.get('subscriptions') if isinstance(r, dict) else None) or [] if x.get('subscription_id') == sid), None)
+    keys = ('status', 'lead_account_id', 'copy_mode', 'max_margin_per_symbol', 'max_margin_total', 'excluded_symbols', 'stop_loss_amount', 'pnl')
+    return {k: e.get(k) for k in keys if k in e} if e else None
+
+
+def changes(n=20):
+    if not LOG.exists(): print(f'No changes logged yet ({LOG}).'); return
+    rows = [json.loads(l) for l in LOG.read_text().splitlines() if l.strip()][-n:]
+    for r in rows:
+        print(f"{r['at']}  {r.get('account', 'main')}  {r.get('cmd') or r['method']}  {r['path'].split('?')[0]}  {json.dumps(r.get('body'))}")
+        if r.get('before') is not None: print(f"    before: {json.dumps(r['before'])}")
+        if r.get('after') is not None: print(f"    after:  {json.dumps(r['after'])}")
+    print(f'\n{len(rows)} shown, from {LOG}')
 
 
 def _symbols(arg, sub):
@@ -89,6 +133,7 @@ def main(a):
     kv, pos, yes = _opts(rest); sub = kv.get('sub')
     if cmd == 'keygen': keygen()
     elif cmd == 'pubkey': print(pubkey())
+    elif cmd == 'changes': changes(int(pos[0]) if pos else 20)
     elif cmd == 'get':  # the path itself may contain '=' (a query string), so take it as given
         if not rest: sys.exit('say the path, e.g. get /v2/positions')
         print(json.dumps(request('GET', rest[0]), indent=1)[:20000])
@@ -105,7 +150,7 @@ def main(a):
         for s in syms:
             body = {'symbol': s, 'leverage': int(val)} if cmd == 'set-leverage' else {'symbol': s, 'marginMode': val}
             if sub: body['sub_account_id'] = sub
-            _send('POST', '/v2/leverage' if cmd == 'set-leverage' else '/v2/marginMode', body, yes)
+            _send('POST', '/v2/leverage' if cmd == 'set-leverage' else '/v2/marginMode', body, yes, cmd=cmd)
             if yes: time.sleep(0.2)
     elif cmd == 'add-margin':
         # Add only: removing margin brings liquidation closer, so it isn't wired.
@@ -138,7 +183,8 @@ def main(a):
               f"Available balance after: ${avail - amt:,.2f}.\n")
         body = {'symbol': sym, 'modify_type': 'add', 'amount': str(pos[1])}
         if sub: body['sub_account_id'] = sub
-        _send('POST', '/v2/isoMargin', body, yes)
+        before = {k: x.get(k) for k in ('size', 'margin_mode', 'leverage', 'iso_balance', 'liquidation_price')}
+        _send('POST', '/v2/isoMargin', body, yes, cmd=cmd, before=before, after=lambda: _position(sym, sub))
     elif cmd == 'subscribe':
         lead = pos[0]
         body = {'lead_account_id': lead.lower() if lead.startswith('0x') else lead,
@@ -169,7 +215,7 @@ def main(a):
             what = 'fixed-ratio copy amount' if 'ratio' in kv else 'margin per entry'
             sys.exit(f"Not sent: the {what} (${need:,.2f}) is more than your available balance (${avail:,.2f}). "
                      f"Fund the account first, or use an amount up to ${avail:,.2f}.")
-        r = _send('POST', '/v2/copy/subscribe', body, yes)
+        r = _send('POST', '/v2/copy/subscribe', body, yes, cmd=cmd)
         if isinstance(r, dict) and r.get('subscription_id'):
             print(f"\nSubscribed: {r['subscription_id']}." + ('' if kv.get('tcap') else
                   f" No total cap was set; add one with:\n  python3 scripts/strike_api.py caps {r['subscription_id']} <per_symbol> <total>" + (f' sub={sub}' if sub else '')))
@@ -179,7 +225,8 @@ def main(a):
         body = {'max_margin_per_symbol': str(pos[1]), 'max_margin_total': str(pos[2])}
         if 'exclude' in kv: body['excluded_symbols'] = [x for x in kv['exclude'].upper().split(',') if x]
         if sub: body['sub_account_id'] = sub
-        _send('PATCH', f'/v2/copy/subscribe/{pos[0]}', body, yes)
+        _send('PATCH', f'/v2/copy/subscribe/{pos[0]}', body, yes, cmd=cmd,
+              before=_subscription(pos[0], sub) if yes else None, after=lambda: _subscription(pos[0], sub))
     elif cmd == 'stop-loss':
         if len(pos) < 2: sys.exit('say the subscription id and the dollar loss, e.g. stop-loss <id> 300 ("0" clears it)')
         amt = float(pos[1])
@@ -196,7 +243,8 @@ def main(a):
                       f'after another ${amt + pnl:,.0f} of losses from here.\n')
         body = {'stop_loss_amount': str(pos[1])}
         if sub: body['sub_account_id'] = sub
-        _send('PATCH', f'/v2/copy/subscribe/{pos[0]}', body, yes)
+        _send('PATCH', f'/v2/copy/subscribe/{pos[0]}', body, yes, cmd=cmd,
+              before={k: e.get(k) for k in ('stop_loss_amount', 'pnl') if k in e}, after=lambda: _subscription(pos[0], sub))
     elif cmd == 'stop':
         if len(pos) > 1 and pos[1] == 'keep':
             sys.exit('Strike no longer keeps copied positions open on stop (spec v1.2.0: stop "always closes its copied open positions"). '
@@ -204,7 +252,8 @@ def main(a):
         # Spec v1.2.0 lists no options: stop always closes copied positions. cancel_open_orders isn't in the spec; it's sent
         # in case the server still honours it (the app's stop doesn't cancel resting copied orders).
         q = '?cancel_open_orders=true&close_open_positions=true' + (f'&sub_account_id={sub}' if sub else '')
-        _send('DELETE', f'/v2/copy/subscribe/{pos[0]}{q}', None, yes)
+        _send('DELETE', f'/v2/copy/subscribe/{pos[0]}{q}', None, yes, cmd=cmd,
+              before=_subscription(pos[0], sub) if yes else None, after=lambda: _subscription(pos[0], sub))
     else:
         sys.exit(f'Unknown command "{cmd}".\n{__doc__}')
 

@@ -22,6 +22,8 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
    limit, each subscription's P&L, what each lead did this week.
    Then `python3 scripts/risk.py --all` (read-only): a price-shock table, weekend gaps on stock/index/commodity
    positions, and copies on opposite sides. Summarise it in two or three lines; its flags join the list below.
+   Then `python3 scripts/strike_api.py changes`: if any changes were made since the last review, list them in one
+   line each (what, when, before → after) so the week's results can be read against them. Skip it if there are none.
 3. Act on "Needs attention" items calmly, one at a time:
    - Past drawdown limit: suggest pausing new copies (exclude every market, or lower caps) and re-checking the lead
      with `check-trader`. Don't suggest adding funds or switching to win it back.
