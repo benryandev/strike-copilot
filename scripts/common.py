@@ -79,7 +79,8 @@ def markets(refresh=False):
         coin = ALIASES.get(b) or (b if b in core else f'xyz:{b}' if f'xyz:{b}' in xyz else None)
         tiers = [[F(t['max_notional']), F(t['max_leverage']), F(t['maintenance_margin_rate']), F(t.get('maintenance_amount') or 0)]
                  for t in m.get('margin_tiers') or []] or [[1e18, 10.0, 0.025, 0.0]]
-        out[sym] = {'base': b, 'hl': coin, 'min_notional': F(m.get('order_min_notional') or 10), 'vol24h': vol.get(sym, 0.0), 'tiers': tiers}
+        out[sym] = {'base': b, 'hl': coin, 'min_notional': F(m.get('order_min_notional') or 10), 'vol24h': vol.get(sym, 0.0), 'tiers': tiers,
+                    'default_leverage': m.get('default_leverage')}
     DATA.mkdir(exist_ok=True); cache.write_text(json.dumps(out, indent=1))
     return out
 

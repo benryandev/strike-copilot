@@ -21,6 +21,8 @@ Tell the user up front how many changes there are (e.g. 4) and number each menu 
    `python3 scripts/strike_api.py set-margin-mode <isolated|cross> BTC-USD,ETH-USD,... [sub=<id>]` then
    `python3 scripts/strike_api.py set-leverage <lev> BTC-USD,ETH-USD,... [sub=<id>]`.
    Explain: a market with an open position keeps its old setting until it's flat.
+   Offer to lock every listed market too (`all` in place of the list): the lead may move into a market later, and a
+   market never set on the account, like a new listing, copies at Strike's default leverage (often 20x).
 2. Subscribe with both caps and the exclusions in one call:
    - fixed margin: `python3 scripts/strike_api.py subscribe <lead> margin=<usd> cap=<usd> tcap=<usd> exclude=A-USD,B-USD [sub=<id>]`
    - fixed ratio: `python3 scripts/strike_api.py subscribe <lead> ratio=<usd> cap=<usd> tcap=<usd> exclude=... [min_entry=<usd>] [mult=<1-10>] [sub=<id>]`

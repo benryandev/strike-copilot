@@ -6,7 +6,7 @@ Checks: balance and drawdown from peak (vs your max_dd), each subscription (mode
 (last trade, last 7 days on Strike markets, copiers, liquidations of the lead), each subscription's open copies,
 copies your caps skipped in the last 7 days (and roughly what they'd be worth now), copies the lead no longer holds,
 liquidations of your copies in the last 7 days, your own copiers if others copy you, markets whose
-leverage or margin mode drifted from your profile, your fee, and the referral discount. Read-only.
+leverage or margin mode drifted from your profile or was never set (new listings), your fee, and the referral discount. Read-only.
 """
 import sys, time, datetime, collections
 from common import F, DAY, get, hl, now_ms, day, markets, hl_map, load_profile, fee_rate, COPIER_CAP
@@ -84,7 +84,15 @@ def main():
     open_syms = {x['symbol'] for x in pos}
     for s, st in drift:
         print(f"  {s}: {st['margin_mode']} {st['leverage']}x" + (' (locked by an open position; fix when flat)' if s in open_syms else ' -> fix: strike_api.py set-leverage / set-margin-mode'))
-    if not drift: print('  all markets match')
+    # A market never set on this account (e.g. a new listing) has no symbol_settings entry, so it isn't drift: copies there
+    # open at Strike's default leverage (20x on DOGE, LIT, SUI when listed in Oct 2026). Found by a Discord tester, 28 Oct.
+    unset = sorted(set(markets(refresh=True)) - set(acct.get('symbol_settings') or {}))
+    if unset:
+        mk = markets(); s_ = f' sub={sub}' if sub else ''
+        print(f"  not set on this account (new listings?): " + ', '.join(f"{s} (default {mk[s].get('default_leverage') or '?'}x)" for s in unset))
+        print(f"    -> fix: strike_api.py set-margin-mode {mm} {','.join(unset)}{s_}  then  strike_api.py set-leverage {F(p['leverage']):.0f} {','.join(unset)}{s_}")
+        flags.append(f"{len(unset)} market(s) have no leverage set on this account ({', '.join(unset)}): a copy there would open at Strike's default leverage. Set them now.")
+    if not drift and not unset: print('  all markets match')
 
     ref = F(pf.get('fee_discount_rate') or 0)
     if not ref: print('\n(No referral fee discount on this account. Run python3 scripts/referral.py to see the option.)')

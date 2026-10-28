@@ -54,7 +54,7 @@ description: Regular account review (weekly by default): subscriptions, P&L, lea
    - Opposite sides: two copies (or accounts) long and short the same market. The overlapping part earns nothing
      while both copies pay fees. Often fine (two leads trading independently); mention it, don't push a change.
    - People copying the user: mention it once, so they know changes to this account reach their copiers too.
-   - Leverage drift: offer the fix (dry run first).
+   - Leverage drift, or markets never set (new listings): offer the fix (dry run first).
 4. If nothing needs attention, say so in one line. Don't invent tasks.
 5. Remind them of the next review day (`review_day` in the profile). Suggest an extra review after: a lead's big
    loss, a liquidation, or any change they make.
